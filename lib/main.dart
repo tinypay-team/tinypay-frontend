@@ -1,33 +1,44 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'screens/chat_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/main_navigation_screen.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(const TinyApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class TinyApp extends StatelessWidget {
+  const TinyApp({super.key});
+
+  Future<bool> _checkLoginStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool('isLoggedIn') ?? false;
+  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'AI Micro Payment App',
+      title: 'Tiny',
       theme: ThemeData(
-        scaffoldBackgroundColor: const Color(0xFFF7F7F7),
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.white,
-          foregroundColor: Colors.black,
-          elevation: 0,
-          centerTitle: true,
-        ),
+        useMaterial3: true,
       ),
-      initialRoute: '/',
-      routes: {
-        '/': (context) => const LoginScreen(),
-        '/main': (context) => const MainNavigationScreen(),
-      },
+      home: FutureBuilder<bool>(
+        future: _checkLoginStatus(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Scaffold(
+              body: Center(
+                child: CircularProgressIndicator(),
+              ),
+            );
+          }
+
+          final isLoggedIn = snapshot.data ?? false;
+          return isLoggedIn ? const MainNavigationScreen() : const LoginScreen();
+        },
+      ),
     );
   }
 }
