@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'main_navigation_screen.dart';
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
 
-  Future<void> _goToChatScreen(BuildContext context, String provider) async {
+  Future<void> _goToChatScreen(
+    BuildContext context,
+    String provider,
+  ) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isLoggedIn', true);
 
@@ -30,6 +34,43 @@ class LoginScreen extends StatelessWidget {
     );
   }
 
+  Future<void> _signInWithGoogle(BuildContext context) async {
+    try {
+      final GoogleSignIn googleSignIn = GoogleSignIn(
+        scopes: ['email', 'profile'],
+      );
+
+      final GoogleSignInAccount? user =
+          await googleSignIn.signIn();
+
+      if (user == null) {
+        return;
+      }
+
+      final GoogleSignInAuthentication auth =
+          await user.authentication;
+
+      print('이름: ${user.displayName}');
+      print('이메일: ${user.email}');
+      print('프로필 이미지: ${user.photoUrl}');
+      print('idToken: ${auth.idToken}');
+      print('accessToken: ${auth.accessToken}');
+
+      // TODO:
+      // auth.idToken을 백엔드로 전송하면 됨
+
+      await _goToChatScreen(context, 'Google');
+    } catch (e) {
+      if (!context.mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Google 로그인 실패: $e'),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -37,7 +78,10 @@ class LoginScreen extends StatelessWidget {
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 24,
+              vertical: 20,
+            ),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 420),
               child: Column(
@@ -86,7 +130,8 @@ class LoginScreen extends StatelessWidget {
                       ],
                     ),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment:
+                          CrossAxisAlignment.start,
                       children: [
                         const Text(
                           '로그인',
@@ -96,7 +141,9 @@ class LoginScreen extends StatelessWidget {
                             color: Color(0xFF111827),
                           ),
                         ),
+
                         const SizedBox(height: 8),
+
                         const Text(
                           'Google 계정으로 간편하게 시작할 수 있어요.',
                           style: TextStyle(
@@ -104,15 +151,20 @@ class LoginScreen extends StatelessWidget {
                             color: Color(0xFF6B7280),
                           ),
                         ),
+
                         const SizedBox(height: 24),
 
                         SocialLoginButton(
                           label: 'Google로 계속하기',
                           backgroundColor: Colors.white,
-                          textColor: const Color(0xFF111827),
-                          borderColor: const Color(0xFFE5E7EB),
-                          imagePath: 'assets/images/google_logo.png',
-                          onTap: () => _goToChatScreen(context, 'Google'),
+                          textColor:
+                              const Color(0xFF111827),
+                          borderColor:
+                              const Color(0xFFE5E7EB),
+                          imagePath:
+                              'assets/images/google_logo.png',
+                          onTap: () =>
+                              _signInWithGoogle(context),
                         ),
                       ],
                     ),
@@ -176,7 +228,9 @@ class SocialLoginButton extends StatelessWidget {
               border: Border.all(color: borderColor),
             ),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16,
+              ),
               child: Row(
                 children: [
                   SizedBox(
@@ -187,7 +241,9 @@ class SocialLoginButton extends StatelessWidget {
                       fit: BoxFit.contain,
                     ),
                   ),
+
                   const SizedBox(width: 12),
+
                   Expanded(
                     child: Text(
                       label,
@@ -199,6 +255,7 @@ class SocialLoginButton extends StatelessWidget {
                       ),
                     ),
                   ),
+
                   const SizedBox(width: 36),
                 ],
               ),

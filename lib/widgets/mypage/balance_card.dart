@@ -4,12 +4,14 @@ class BalanceCard extends StatelessWidget {
   final bool isWalletConnected;
   final String walletAddress;
   final VoidCallback onChargeTap;
+  final double balance;
 
   const BalanceCard({
     super.key,
     required this.isWalletConnected,
     required this.walletAddress,
     required this.onChargeTap,
+    required this.balance,
   });
 
   @override
@@ -40,8 +42,8 @@ class BalanceCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          const Text(
-            'USDC 100',
+          Text(
+            'USDC ${balance.toStringAsFixed(0)}',
             style: TextStyle(
               color: Colors.white,
               fontSize: 38,
