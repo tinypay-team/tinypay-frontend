@@ -5,6 +5,7 @@ class BalanceCard extends StatelessWidget {
   final String walletAddress;
   final VoidCallback onChargeTap;
   final double balance;
+  final VoidCallback onWalletTap;
 
   const BalanceCard({
     super.key,
@@ -12,6 +13,7 @@ class BalanceCard extends StatelessWidget {
     required this.walletAddress,
     required this.onChargeTap,
     required this.balance,
+    required this.onWalletTap,
   });
 
   @override
@@ -30,21 +32,30 @@ class BalanceCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('총 잔액', style: TextStyle(color: Colors.white, fontSize: 17)),
-              Icon(
-                Icons.account_balance_wallet_outlined,
-                color: Colors.white,
-                size: 34,
+              const Text(
+                '총 잔액',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 17,
+                ),
+              ),
+              GestureDetector(
+                onTap: onWalletTap,
+                child: const Icon(
+                  Icons.account_balance_wallet_outlined,
+                  color: Colors.white,
+                  size: 34,
+                ),
               ),
             ],
           ),
           const SizedBox(height: 8),
           Text(
             'USDC ${balance.toStringAsFixed(0)}',
-            style: TextStyle(
+            style: const TextStyle(
               color: Colors.white,
               fontSize: 38,
               fontWeight: FontWeight.bold,
@@ -53,7 +64,10 @@ class BalanceCard extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             isWalletConnected ? walletAddress : '지갑이 연결되지 않았습니다.',
-            style: const TextStyle(color: Colors.white70, fontSize: 14),
+            style: const TextStyle(
+              color: Colors.white70,
+              fontSize: 14,
+            ),
           ),
           const SizedBox(height: 28),
           SizedBox(
@@ -64,7 +78,10 @@ class BalanceCard extends StatelessWidget {
               icon: const Icon(Icons.add, size: 22),
               label: const Text(
                 '충전하기',
-                style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.white,

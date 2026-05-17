@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'screens/chat_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/main_navigation_screen.dart';
+import 'theme/app_colors.dart';
 
 void main() {
   runApp(const TinyApp());
@@ -23,6 +23,28 @@ class TinyApp extends StatelessWidget {
       title: 'Tiny',
       theme: ThemeData(
         useMaterial3: true,
+        scaffoldBackgroundColor: AppColors.background,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: AppColors.primary,
+          primary: AppColors.primary,
+          background: AppColors.background,
+        ),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: AppColors.background,
+          elevation: 0,
+          centerTitle: false,
+          foregroundColor: AppColors.text,
+          titleTextStyle: TextStyle(
+            color: AppColors.text,
+            fontSize: 32,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        textTheme: const TextTheme(
+          bodyMedium: TextStyle(
+            color: AppColors.text,
+          ),
+        ),
       ),
       home: FutureBuilder<bool>(
         future: _checkLoginStatus(),

@@ -17,6 +17,8 @@ import '../models/wallet_model.dart';
 import '../models/user_model.dart';
 import '../models/budget_model.dart';
 import '../services/mypage_service.dart';
+import '../dialogs/mypage/wallet_dialog.dart';
+import '../theme/app_colors.dart';
 
 class MyPageScreen extends StatefulWidget {
   const MyPageScreen({super.key});
@@ -28,6 +30,27 @@ class MyPageScreen extends StatefulWidget {
 class _MyPageScreenState extends State<MyPageScreen> {
   
   final MyPageService _service = MyPageService();
+  bool autoPaymentEnabled = true;
+
+  void _showWalletDialog() {
+  showDialog(
+    context: context,
+    builder: (context) {
+      return WalletDialog(
+        wallet: wallet!,
+        autoPaymentEnabled: autoPaymentEnabled,
+        onToggleAutoPayment: () {
+          setState(() {
+            autoPaymentEnabled = !autoPaymentEnabled;
+          });
+
+          Navigator.pop(context);
+          _showWalletDialog();
+        },
+      );
+    },
+  );
+}
 
   WalletModel? wallet;
   UserModel? user;
@@ -190,13 +213,14 @@ class _MyPageScreenState extends State<MyPageScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFFAF7FF),
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0.5,
+        backgroundColor: AppColors.background,
+        elevation: 0,
+        scrolledUnderElevation: 0,
         title: const Text(
           'My Page',
           style: TextStyle(
-            color: primaryColor,
-            fontSize: 24,
+            color: AppColors.text,
+            fontSize: 32,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -204,10 +228,10 @@ class _MyPageScreenState extends State<MyPageScreen> {
           GestureDetector(
             onTap: _showProfileDialog,
             child: Container(
-              margin: const EdgeInsets.only(right: 18),
+              margin: const EdgeInsets.only(right: 20),
               child: ProfileAvatar(
                 selectedAvatar: user!.avatar,
-                size: 48,
+                size: 50,
               ),
             ),
           ),
@@ -223,6 +247,7 @@ class _MyPageScreenState extends State<MyPageScreen> {
               walletAddress: wallet!.walletAddress,
               balance: wallet!.balance,
               onChargeTap: () {},
+              onWalletTap: _showWalletDialog,
             ),
             const SizedBox(height: 22),
             BudgetCard(

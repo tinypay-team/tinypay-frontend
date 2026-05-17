@@ -1,22 +1,32 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  static const Color primary = Color(0xFF6C63FF);
-  static const Color secondary = Color(0xFF8F5BFF);
-  static const Color accent = Color(0xFF4D9BFF);
+  static const background = Color(0xFFF7F9FF);
 
-  static const Color background = Color(0xFFF7F7FB);
-  static const Color surface = Colors.white;
-  static const Color border = Color(0xFFE8E8F2);
+  static const primary = Color(0xFF6F8CFF);
+  static const primaryDark = Color(0xFF1E2457);
+  static const primaryLight = Color(0xFFEAF1FF);
 
-  static const Color textPrimary = Color(0xFF1D1D35);
-  static const Color textSecondary = Color(0xFF7A7A93);
-  static const Color success = Color(0xFF22C55E);
-  static const Color warning = Color(0xFFF59E0B);
+  static const yellow = Color(0xFFFFF3C4);
+  static const green = Color(0xFF58C45C);
 
-  static const LinearGradient primaryGradient = LinearGradient(
-    colors: [primary, secondary],
-    begin: Alignment.centerLeft,
-    end: Alignment.centerRight,
+  static const card = Colors.white;
+  static const border = Color(0xFFE4E9F7);
+  static const text = Color(0xFF1E2457);
+  static const subText = Color(0xFF7B819A);
+
+  // chat_screen.dart에서 사용하는 이름들
+  static const surface = Colors.white;
+  static const textPrimary = Color(0xFF1E2457);
+  static const textSecondary = Color(0xFF7B819A);
+  static const success = Color(0xFF58C45C);
+
+  static const primaryGradient = LinearGradient(
+    colors: [
+      Color(0xFF6F8CFF),
+      Color(0xFF8B7CFF),
+    ],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
   );
 }
