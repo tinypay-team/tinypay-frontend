@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'chat_screen.dart';
 import 'main_navigation_screen.dart';
 
 class LoginScreen extends StatelessWidget {
@@ -47,7 +46,7 @@ class LoginScreen extends StatelessWidget {
                   const SizedBox(height: 80),
 
                   const Text(
-                    'Tiny',
+                    'Tiny Pay',
                     style: TextStyle(
                       fontSize: 30,
                       fontWeight: FontWeight.w800,
@@ -58,7 +57,7 @@ class LoginScreen extends StatelessWidget {
                   const SizedBox(height: 12),
 
                   const Text(
-                    'AI와 쉽고 빠르게 대화하고,\n스마트한 서비스 경험을 시작해보세요.',
+                    'AI와 쉽고 빠르게 대화하고,\n스마트한 결제 서비스 경험을 시작해보세요.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 15,
@@ -99,7 +98,7 @@ class LoginScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 8),
                         const Text(
-                          '소셜 계정으로 간편하게 시작할 수 있어요.',
+                          'Google 계정으로 간편하게 시작할 수 있어요.',
                           style: TextStyle(
                             fontSize: 14,
                             color: Color(0xFF6B7280),
@@ -114,28 +113,6 @@ class LoginScreen extends StatelessWidget {
                           borderColor: const Color(0xFFE5E7EB),
                           imagePath: 'assets/images/google_logo.png',
                           onTap: () => _goToChatScreen(context, 'Google'),
-                        ),
-
-                        const SizedBox(height: 14),
-
-                        SocialLoginButton(
-                          label: 'Kakao로 계속하기',
-                          backgroundColor: const Color(0xFFFEE500),
-                          textColor: const Color(0xFF191919),
-                          borderColor: const Color(0xFFFEE500),
-                          imagePath: 'assets/images/kakao_logo.png',
-                          onTap: () => _goToChatScreen(context, 'Kakao'),
-                        ),
-
-                        const SizedBox(height: 14),
-
-                        SocialLoginButton(
-                          label: 'Apple로 계속하기',
-                          backgroundColor: Colors.black,
-                          textColor: Colors.white,
-                          borderColor: Colors.black,
-                          imagePath: 'assets/images/apple_logo.png',
-                          onTap: () => _goToChatScreen(context, 'Apple'),
                         ),
                       ],
                     ),

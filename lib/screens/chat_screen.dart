@@ -24,7 +24,7 @@ class _ChatScreenState extends State<ChatScreen> {
       messages: [
         const _ChatItem(
           isUser: false,
-          text: '안녕하세요! AI Agent Pay입니다. 무엇을 도와드릴까요?',
+          text: '안녕하세요! 무엇을 도와드릴까요?',
           time: '오후 03:37',
         ),
         const _ChatItem(
