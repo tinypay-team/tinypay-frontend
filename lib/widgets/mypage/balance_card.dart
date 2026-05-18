@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme/app_colors.dart';
 
 class BalanceCard extends StatelessWidget {
   final bool isWalletConnected;
@@ -20,73 +21,122 @@ class BalanceCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(26),
+      height: 170,
+      padding: const EdgeInsets.fromLTRB(24, 22, 18, 18),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(28),
         gradient: const LinearGradient(
-          colors: [Color(0xFF5B6CFF), Color(0xFF8B2CFF), Color(0xFFE0449A)],
+          colors: [
+            Color(0xFF91AAFF),
+            Color(0xFFCFE9FF),
+          ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x1A6F8CFF),
+            blurRadius: 22,
+            offset: Offset(0, 10),
+          ),
+        ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
+        clipBehavior: Clip.none,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                '총 잔액',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 17,
-                ),
+          /// 왼쪽 잔액 영역
+          Positioned(
+            left: 0,
+            top: 0,
+            bottom: 0,
+            child: SizedBox(
+              width: 190,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    '총 잔액',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'USDC ${balance.toStringAsFixed(2)}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 30,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: -1.5,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    isWalletConnected
+                        ? walletAddress
+                        : '지갑이 연결되지 않았습니다.',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Color(0xEEFFFFFF),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
               ),
-              GestureDetector(
-                onTap: onWalletTap,
-                child: const Icon(
-                  Icons.account_balance_wallet_outlined,
-                  color: Colors.white,
-                  size: 34,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'USDC ${balance.toStringAsFixed(0)}',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 38,
-              fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            isWalletConnected ? walletAddress : '지갑이 연결되지 않았습니다.',
-            style: const TextStyle(
-              color: Colors.white70,
-              fontSize: 14,
+
+          /// 오른쪽 Tiny 캐릭터
+          Positioned(
+            right: -6,
+            top: -24,
+            child: GestureDetector(
+              onTap: onWalletTap,
+              child: Image.asset(
+                'assets/images/tinypay3.png',
+                width: 138,
+              ),
             ),
           ),
-          const SizedBox(height: 28),
-          SizedBox(
-            width: double.infinity,
-            height: 48,
-            child: ElevatedButton.icon(
-              onPressed: onChargeTap,
-              icon: const Icon(Icons.add, size: 22),
-              label: const Text(
-                '충전하기',
-                style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.bold,
+
+          /// 작은 충전 버튼
+          Positioned(
+            right: 8,
+            bottom: 6,
+            child: SizedBox(
+              width: 118,
+              height: 44,
+              child: ElevatedButton(
+                onPressed: onChargeTap,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding: EdgeInsets.zero,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(999),
+                  ),
                 ),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: const Color(0xFF8B2CFF),
-                elevation: 0,
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.add_rounded, size: 22),
+                    SizedBox(width: 4),
+                    Text(
+                      '충전',
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

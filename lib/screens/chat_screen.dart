@@ -123,25 +123,37 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _sendMessage() {
-    final text = _controller.text.trim();
-    if (text.isEmpty) return;
+  final text = _controller.text.trim();
+  if (text.isEmpty) return;
 
-    setState(() {
-      _currentSession.messages.add(
-        _ChatItem(
-          isUser: true,
-          text: text,
-          time: '오후 03:42',
-        ),
-      );
-      _controller.clear();
-      _currentSession.showCostCard = true;
-      _currentSession.showConfirmCard = false;
-      _currentSession.showResultCard = false;
-      _currentSession.subtitle = text;
-      _currentSession.date = '방금';
-    });
-  }
+  setState(() {
+    _currentSession.messages.add(
+      _ChatItem(
+        isUser: true,
+        text: text,
+        time: '오후 03:42',
+      ),
+    );
+
+    _controller.clear();
+
+    // 1회 한도 이하라고 가정하고 자동결제 처리
+    _currentSession.showCostCard = true;
+    _currentSession.showConfirmCard = false;
+    _currentSession.showResultCard = true;
+
+    _currentSession.messages.add(
+      const _ChatItem(
+        isUser: false,
+        text: '예상 비용이 1회 한도 이하라서 자동결제가 완료되었어요. 요청하신 내용을 정리해드릴게요.',
+        time: '오후 03:45',
+      ),
+    );
+
+    _currentSession.subtitle = text;
+    _currentSession.date = '방금';
+  });
+}
 
   void _showConfirm() {
     setState(() {
@@ -472,156 +484,313 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Widget _buildMessageBubble(_ChatItem item) {
-    final radius = BorderRadius.circular(18);
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Align(
-        alignment: item.isUser ? Alignment.centerRight : Alignment.centerLeft,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 300),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            decoration: BoxDecoration(
-              gradient: item.isUser ? AppColors.primaryGradient : null,
-              color: item.isUser ? null : AppColors.surface,
-              borderRadius: radius,
-              border:
-                  item.isUser ? null : Border.all(color: AppColors.border),
-              boxShadow: const [
-                BoxShadow(
-                  color: Color(0x11000000),
-                  blurRadius: 8,
-                  offset: Offset(0, 3),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  item.text,
-                  style: TextStyle(
-                    color: item.isUser ? Colors.white : AppColors.textPrimary,
-                    fontSize: 15,
-                    height: 1.45,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  item.time,
-                  style: TextStyle(
-                    color:
-                        item.isUser ? Colors.white70 : AppColors.textSecondary,
-                    fontSize: 11,
-                  ),
-                ),
-              ],
+  return Padding(
+    padding: const EdgeInsets.only(bottom: 18),
+    child: Row(
+      mainAxisAlignment:
+          item.isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        /// Tiny 캐릭터 (AI 메시지일 때만)
+        if (!item.isUser) ...[
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Image.asset(
+              'assets/images/tinypay1.png',
+              width: 48,
+              height: 48,
+              fit: BoxFit.contain,
             ),
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCostAnalysisCard() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.border),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x12000000),
-            blurRadius: 12,
-            offset: Offset(0, 4),
-          ),
+          const SizedBox(width: 10),
         ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Row(
-            children: [
-              Icon(Icons.receipt_long_rounded, color: AppColors.primary),
-              SizedBox(width: 8),
-              Text(
-                '사용할 API 및 예상 비용',
-                style: TextStyle(
-                  color: AppColors.textPrimary,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                ),
+
+        /// 메시지 버블
+        Flexible(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 300),
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 18,
+                vertical: 16,
               ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          ..._apiCosts.map(
-            (api) => Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: Row(
-                children: [
-                  const Icon(
-                    Icons.check_circle_rounded,
-                    size: 18,
-                    color: AppColors.success,
+              decoration: BoxDecoration(
+                color: item.isUser
+                    ? const Color(0xFFFFF7DD)
+                    : Colors.white,
+                borderRadius: BorderRadius.only(
+                  topLeft: const Radius.circular(26),
+                  topRight: const Radius.circular(26),
+                  bottomLeft:
+                      Radius.circular(item.isUser ? 26 : 10),
+                  bottomRight:
+                      Radius.circular(item.isUser ? 10 : 26),
+                ),
+                border: Border.all(
+                  color: item.isUser
+                      ? const Color(0xFFFFF0C7)
+                      : AppColors.border,
+                ),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x0A000000),
+                    blurRadius: 16,
+                    offset: Offset(0, 6),
                   ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      api.name,
-                      style: const TextStyle(
-                        color: AppColors.textPrimary,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item.text,
+                    style: const TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 16,
+                      height: 1.55,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
+
+                  const SizedBox(height: 8),
+
                   Text(
-                    api.price,
+                    item.time,
                     style: const TextStyle(
-                      color: AppColors.primary,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w800,
+                      color: AppColors.textSecondary,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                 ],
               ),
             ),
           ),
-          const Divider(height: 24, color: AppColors.border),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                '총 예상 비용',
-                style: TextStyle(
-                  color: AppColors.textPrimary,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                ),
+        ),
+      ],
+    ),
+  );
+}
+
+  Widget _buildCostAnalysisCard() {
+  return Container(
+    padding: const EdgeInsets.all(20),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(30),
+      border: Border.all(color: AppColors.border),
+      boxShadow: const [
+        BoxShadow(
+          color: Color(0x0F000000),
+          blurRadius: 18,
+          offset: Offset(0, 8),
+        ),
+      ],
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: AppColors.primaryLight,
+                borderRadius: BorderRadius.circular(16),
               ),
-              Text(
-                '₩$_totalCostWon',
-                style: const TextStyle(
-                  color: AppColors.textPrimary,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
+              child: const Icon(
+                Icons.auto_awesome_rounded,
+                color: AppColors.primary,
+                size: 24,
+              ),
+            ),
+
+            const SizedBox(width: 12),
+
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '사용할 API 및 예상 비용',
+                    style: TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+
+                  SizedBox(height: 4),
+
+                  Text(
+                    'Tiny가 필요한 API를 계산했어요',
+                    style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 18),
+
+        ..._apiCosts.map(
+          (api) => Container(
+            margin: const EdgeInsets.only(bottom: 10),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 14,
+              vertical: 13,
+            ),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8FAFF),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.check_circle_rounded,
+                  size: 20,
+                  color: AppColors.success,
+                ),
+
+                const SizedBox(width: 10),
+
+                Expanded(
+                  child: Text(
+                    api.name,
+                    style: const TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+
+                Text(
+                  api.price,
+                  style: const TextStyle(
+                    color: AppColors.primary,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+
+        const SizedBox(height: 6),
+
+        const Divider(
+          height: 24,
+          color: AppColors.border,
+        ),
+
+        const SizedBox(height: 4),
+
+        Row(
+          children: [
+            const Text(
+              '총 예상 비용',
+              style: TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 15,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+
+            const Spacer(),
+
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                const Text(
+                  '0.02 USDC',
+                  style: TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+
+                Text(
+                  '≈ ₩$_totalCostWon',
+                  style: const TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 18),
+
+        /// 자동결제 완료 상태 카드
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 16,
+          ),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF5FAF7),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: const Color(0xFFD8F0DF),
+            ),
+          ),
+          child: const Row(
+            children: [
+              Icon(
+                Icons.check_circle_rounded,
+                color: AppColors.success,
+                size: 24,
+              ),
+
+              SizedBox(width: 12),
+
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '자동결제가 완료되었어요',
+                      style: TextStyle(
+                        color: AppColors.textPrimary,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+
+                    SizedBox(height: 4),
+
+                    Text(
+                      '1회 한도 이하 금액이라 자동 승인되었어요.',
+                      style: TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 14),
-          PrimaryGradientButton(
-            text: '결제 진행하기',
-            onPressed: _showConfirm,
-          ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
+}
 
   Widget _buildConfirmCard() {
     return Container(
@@ -731,90 +900,109 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Widget _buildInputArea() {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(12, 10, 12, 14),
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        boxShadow: [
-          BoxShadow(
-            color: Color(0x12000000),
-            blurRadius: 12,
-            offset: Offset(0, -3),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        top: false,
-        child: Column(
+  return Container(
+    padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+    decoration: const BoxDecoration(
+      color: AppColors.background,
+    ),
+    child: SafeArea(
+      top: false,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: AppColors.border),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x10000000),
+              blurRadius: 18,
+              offset: Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            Row(
-              children: [
-                _buildAttachButton(Icons.attach_file_rounded, '파일'),
-                const SizedBox(width: 8),
-                _buildAttachButton(Icons.image_outlined, '이미지'),
-                const SizedBox(width: 8),
-                _buildAttachButton(Icons.videocam_outlined, '동영상'),
-              ],
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: AppColors.primaryLight,
+                shape: BoxShape.circle,
+              ),
+              child: IconButton(
+                padding: EdgeInsets.zero,
+                onPressed: () {},
+                icon: const Icon(
+                  Icons.add_rounded,
+                  color: AppColors.primary,
+                  size: 26,
+                ),
+              ),
             ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                Expanded(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF3F4FA),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.border),
-                    ),
-                    child: TextField(
-                      controller: _controller,
-                      minLines: 1,
-                      maxLines: 4,
-                      decoration: const InputDecoration(
-                        hintText: '메시지를 입력하세요...',
-                        hintStyle: TextStyle(
-                          color: AppColors.textSecondary,
-                          fontSize: 14,
-                        ),
-                        border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 14,
-                        ),
-                      ),
-                    ),
+
+            const SizedBox(width: 10),
+
+            Expanded(
+              child: TextField(
+                controller: _controller,
+                minLines: 1,
+                maxLines: 4,
+                style: const TextStyle(
+                  color: AppColors.text,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
+                decoration: const InputDecoration(
+                  hintText: 'Tiny에게 물어보세요',
+                  hintStyle: TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  border: InputBorder.none,
+                  isDense: true,
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: 2,
+                    vertical: 12,
                   ),
                 ),
-                const SizedBox(width: 10),
-                Container(
-                  decoration: BoxDecoration(
-                    gradient: AppColors.primaryGradient,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: IconButton(
-                    onPressed: _sendMessage,
-                    icon: const Icon(Icons.send_rounded, color: Colors.white),
-                  ),
-                ),
-              ],
+              ),
             ),
-            const SizedBox(height: 8),
-            const Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'AI가 필요한 API와 예상 비용을 먼저 안내합니다.',
-                style: TextStyle(
-                  color: AppColors.textSecondary,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
+
+            const SizedBox(width: 10),
+
+            Container(
+              width: 42,
+              height: 42,
+              decoration: const BoxDecoration(
+                gradient: AppColors.primaryGradient,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Color(0x336F8CFF),
+                    blurRadius: 12,
+                    offset: Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: IconButton(
+                padding: EdgeInsets.zero,
+                onPressed: _sendMessage,
+                icon: const Icon(
+                  Icons.arrow_upward_rounded,
+                  color: Colors.white,
+                  size: 24,
                 ),
               ),
             ),
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildAttachButton(IconData icon, String label) {
     return Container(

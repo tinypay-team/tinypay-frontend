@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme/app_colors.dart';
 
 class LimitCard extends StatelessWidget {
   final double singleLimit;
@@ -18,73 +19,84 @@ class LimitCard extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.all(22),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: const Color(0xFFE4E1EA)),
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(30),
+          border: Border.all(color: AppColors.border),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x0F000000),
+              blurRadius: 18,
+              offset: Offset(0, 8),
+            ),
+          ],
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Row(
           children: [
-            _cardTitleRow(),
-            const SizedBox(height: 42),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  'USDC ${singleLimit.toStringAsFixed(1)}',
-                  style: const TextStyle(
-                    color: Color(0xFF4EA45C),
-                    fontSize: 31,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const Spacer(),
-                const Text(
-                  '건당 최대 금액',
+            /// 왼쪽 아이콘 박스
+            Container(
+              width: 62,
+              height: 62,
+              decoration: BoxDecoration(
+                color: AppColors.primaryLight,
+                borderRadius: BorderRadius.circular(22),
+              ),
+              child: const Center(
+                child: Text(
+                  '\$',
                   style: TextStyle(
-                    color: Color(0xFF555A6E),
-                    fontSize: 16,
+                    color: AppColors.primary,
+                    fontSize: 34,
+                    fontWeight: FontWeight.w900,
+                    height: 1,
                   ),
                 ),
-              ],
+              ),
+            ),
+
+            const SizedBox(width: 18),
+
+            /// 텍스트 영역
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    '1회 한도',
+                    style: TextStyle(
+                      color: AppColors.text,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  Text(
+                    'USDC ${singleLimit.toStringAsFixed(1)}',
+                    style: const TextStyle(
+                      color: AppColors.text,
+                      fontSize: 29,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: -1,
+                    ),
+                  ),
+
+                  const SizedBox(height: 4),
+
+                  const Text(
+                    '건당 자동 승인 최대 금액',
+                    style: TextStyle(
+                      color: AppColors.subText,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
       ),
-    );
-  }
-
-  Widget _cardTitleRow() {
-    return Row(
-      children: [
-        Container(
-          width: 42,
-          height: 42,
-          decoration: const BoxDecoration(
-            color: Color(0xFFE2F8E8),
-            shape: BoxShape.circle,
-          ),
-          child: const Icon(
-            Icons.attach_money,
-            color: Color(0xFF4EA45C),
-            size: 25,
-          ),
-        ),
-        const SizedBox(width: 12),
-        const Text(
-          '1회 한도',
-          style: TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const Spacer(),
-        const Icon(
-          Icons.chevron_right,
-          color: Color(0xFF9AA0AA),
-          size: 30,
-        ),
-      ],
     );
   }
 }

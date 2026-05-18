@@ -214,7 +214,7 @@ class WalletDialog extends StatelessWidget {
                   const Spacer(),
 
                   Text(
-                    'USDC ${wallet.balance.toStringAsFixed(2)}',
+                    'USD ${wallet.balance.toStringAsFixed(2)}',
                     style: const TextStyle(
                       color: Color(0xFF5B5CF6),
                       fontSize: 20,
