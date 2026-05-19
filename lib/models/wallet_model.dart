@@ -8,4 +8,16 @@ class WalletModel {
     required this.walletAddress,
     required this.isConnected,
   });
+
+  WalletModel copyWith({
+    double? balance,
+    String? walletAddress,
+    bool? isConnected,
+  }) {
+    return WalletModel(
+      balance: balance ?? this.balance,
+      walletAddress: walletAddress ?? this.walletAddress,
+      isConnected: isConnected ?? this.isConnected,
+    );
+  }
 }

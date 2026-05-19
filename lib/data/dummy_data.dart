@@ -4,9 +4,9 @@ import '../models/user_model.dart';
 import '../models/budget_model.dart';
 
 const dummyWallet = WalletModel(
-  balance: 100,
-  walletAddress: '0x12A4...9F3D',
-  isConnected: true,
+  balance: 0,
+  walletAddress: '',
+  isConnected: false,
 );
 
 const dummyUser = UserModel(

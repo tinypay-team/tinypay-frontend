@@ -62,7 +62,9 @@ class BalanceCard extends StatelessWidget {
                       fontWeight: FontWeight.w700,
                     ),
                   ),
+
                   const SizedBox(height: 8),
+
                   Text(
                     'USDC ${balance.toStringAsFixed(2)}',
                     maxLines: 1,
@@ -74,7 +76,9 @@ class BalanceCard extends StatelessWidget {
                       letterSpacing: -1.5,
                     ),
                   ),
+
                   const SizedBox(height: 10),
+
                   Text(
                     isWalletConnected
                         ? walletAddress
@@ -105,7 +109,7 @@ class BalanceCard extends StatelessWidget {
             ),
           ),
 
-          /// 작은 충전 버튼
+          /// 오른쪽 아래 버튼
           Positioned(
             right: 8,
             bottom: 6,
@@ -113,7 +117,10 @@ class BalanceCard extends StatelessWidget {
               width: 118,
               height: 44,
               child: ElevatedButton(
-                onPressed: onChargeTap,
+                onPressed:
+                    isWalletConnected
+                        ? onChargeTap
+                        : onWalletTap,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
@@ -123,15 +130,25 @@ class BalanceCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(999),
                   ),
                 ),
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                child: Row(
+                  mainAxisAlignment:
+                      MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.add_rounded, size: 22),
-                    SizedBox(width: 4),
+                    Icon(
+                      isWalletConnected
+                          ? Icons.add_rounded
+                          : Icons.account_balance_wallet_rounded,
+                      size: 22,
+                    ),
+
+                    const SizedBox(width: 4),
+
                     Text(
-                      '충전',
-                      style: TextStyle(
-                        fontSize: 17,
+                      isWalletConnected
+                          ? '충전'
+                          : '지갑 생성',
+                      style: const TextStyle(
+                        fontSize: 15,
                         fontWeight: FontWeight.w800,
                       ),
                     ),

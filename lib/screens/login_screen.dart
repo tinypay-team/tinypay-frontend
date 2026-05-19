@@ -36,8 +36,10 @@ class LoginScreen extends StatelessWidget {
 
   Future<void> _signInWithGoogle(BuildContext context) async {
     try {
+
       final GoogleSignIn googleSignIn = GoogleSignIn(
         scopes: ['email', 'profile'],
+        serverClientId: '887536055216-cdd6ra0vvmpn41sadd5uni1v6q42sa2c.apps.googleusercontent.com'
       );
 
       final GoogleSignInAccount? user =

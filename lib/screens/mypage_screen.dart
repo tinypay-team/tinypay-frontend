@@ -19,6 +19,8 @@ import '../models/budget_model.dart';
 import '../services/mypage_service.dart';
 import '../dialogs/mypage/wallet_dialog.dart';
 import '../theme/app_colors.dart';
+import 'wallet/phone_verification_screen.dart';
+import 'wallet/charge_screen.dart';
 
 class MyPageScreen extends StatefulWidget {
   const MyPageScreen({super.key});
@@ -50,6 +52,42 @@ class _MyPageScreenState extends State<MyPageScreen> {
       );
     },
   );
+}
+
+Future<void> _goToPhoneVerification() async {
+  final result = await Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => const PhoneVerificationScreen(),
+    ),
+  );
+
+  if (result == true) {
+    setState(() {
+      wallet = const WalletModel(
+        balance: 0,
+        walletAddress: '0x12A4...9F3D',
+        isConnected: true,
+      );
+    });
+  }
+}
+
+Future<void> _goToChargeScreen() async {
+  final chargedAmount = await Navigator.push<double>(
+    context,
+    MaterialPageRoute(
+      builder: (_) => const ChargeScreen(),
+    ),
+  );
+
+  if (chargedAmount != null) {
+    setState(() {
+      wallet = wallet!.copyWith(
+        balance: wallet!.balance + chargedAmount,
+      );
+    });
+  }
 }
 
   WalletModel? wallet;
@@ -184,6 +222,12 @@ class _MyPageScreenState extends State<MyPageScreen> {
     _loadMyPageData();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _loadMyPageData();
+}
+
   Future<void> _loadMyPageData() async {
   final walletData = await _service.getWallet();
   final userData = await _service.getUser();
@@ -246,8 +290,10 @@ class _MyPageScreenState extends State<MyPageScreen> {
               isWalletConnected: wallet!.isConnected,
               walletAddress: wallet!.walletAddress,
               balance: wallet!.balance,
-              onChargeTap: () {},
-              onWalletTap: _showWalletDialog,
+              onChargeTap: _goToChargeScreen,
+              onWalletTap: wallet!.isConnected
+                ? _showWalletDialog
+                : _goToPhoneVerification,
             ),
             const SizedBox(height: 22),
             BudgetCard(
