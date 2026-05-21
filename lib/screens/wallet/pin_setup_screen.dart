@@ -15,7 +15,7 @@ class _PinSetupScreenState extends State<PinSetupScreen> {
   bool isPinHidden = true;
   bool isConfirmPinHidden = true;
 
-  void completePinSetup() {
+  void completePinSetup() async {
     final pin = pinController.text.trim();
     final confirmPin = confirmPinController.text.trim();
 
@@ -37,12 +37,16 @@ class _PinSetupScreenState extends State<PinSetupScreen> {
       const SnackBar(content: Text('결제 PIN이 생성되었습니다.')),
     );
 
-    Navigator.push(
+    final result = await Navigator.push(
   context,
   MaterialPageRoute(
     builder: (_) => const WalletCreatedScreen(),
   ),
 );
+
+if (result == true) {
+  Navigator.pop(context, true);
+}
   }
 
   @override

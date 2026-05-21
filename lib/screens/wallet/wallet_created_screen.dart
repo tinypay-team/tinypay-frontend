@@ -127,16 +127,8 @@ class WalletCreatedScreen extends StatelessWidget {
               height: 54,
               child: ElevatedButton(
                 onPressed: () {
-  Navigator.pushAndRemoveUntil(
-    context,
-    MaterialPageRoute(
-      builder: (_) => const MainNavigationScreen(
-        initialIndex: 1,
-      ),
-    ),
-    (route) => false,
-  );
-},
+                  Navigator.pop(context, true);
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF5B5CF6),
                   foregroundColor: Colors.white,

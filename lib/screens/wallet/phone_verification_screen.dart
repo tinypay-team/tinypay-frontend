@@ -67,7 +67,7 @@ class _PhoneVerificationScreenState
     );
   }
 
-  void verifyCode() {
+  void verifyCode() async {
     if (codeController.text == '123456') {
   ScaffoldMessenger.of(context).showSnackBar(
     const SnackBar(
@@ -75,12 +75,16 @@ class _PhoneVerificationScreenState
     ),
   );
 
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (_) => const PinSetupScreen(),
-    ),
-  );
+  final result = await Navigator.push(
+  context,
+  MaterialPageRoute(
+    builder: (_) => const PinSetupScreen(),
+  ),
+);
+
+if (result == true) {
+  Navigator.pop(context, true);
+}
 } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(

@@ -4,12 +4,12 @@ import '../../theme/app_colors.dart';
 
 class TinyStatusCard extends StatelessWidget {
   final String message;
-  final IconData icon;
+  final String imagePath;
 
   const TinyStatusCard({
     super.key,
     required this.message,
-    required this.icon,
+    required this.imagePath,
   });
 
   @override
@@ -33,17 +33,11 @@ class TinyStatusCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: AppColors.primaryLight,
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Icon(
-              icon,
-              color: AppColors.primary,
-            ),
+          Image.asset(
+            imagePath,
+            width: 48,
+            height: 48,
+            fit: BoxFit.contain,
           ),
 
           const SizedBox(width: 14),

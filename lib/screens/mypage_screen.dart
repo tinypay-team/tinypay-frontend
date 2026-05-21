@@ -23,6 +23,8 @@ import 'wallet/phone_verification_screen.dart';
 import 'wallet/charge_screen.dart';
 import '../widgets/mypage/auto_payment_card.dart';
 import '../widgets/mypage/ai_service_usage_item.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'login_screen.dart';
 
 class MyPageScreen extends StatefulWidget {
   const MyPageScreen({super.key});
@@ -125,12 +127,23 @@ Future<void> _goToChargeScreen() async {
           _showEditProfileDialog();
         },
         onWithdrawTap: _showWithdrawDialog,
-        onLogoutTap: () {
-          Navigator.pop(context);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('로그아웃 기능은 추후 연결 예정입니다.')),
-          );
-        },
+        onLogoutTap: () async {
+  Navigator.pop(context);
+
+  final prefs = await SharedPreferences.getInstance();
+
+  await prefs.setBool('isLoggedIn', false);
+
+  if (!mounted) return;
+
+  Navigator.pushAndRemoveUntil(
+    context,
+    MaterialPageRoute(
+      builder: (_) => const LoginScreen(),
+    ),
+    (route) => false,
+  );
+},
       );
     },
   );

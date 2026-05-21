@@ -41,8 +41,9 @@ class MessageBubble extends StatelessWidget {
                   vertical: 16,
                 ),
                 decoration: BoxDecoration(
-                  color:
-                      item.isUser ? const Color(0xFFFFF7DD) : Colors.white,
+                  color: item.isUser
+                      ? const Color(0xFFFFF7DD)
+                      : Colors.white,
                   borderRadius: BorderRadius.only(
                     topLeft: const Radius.circular(26),
                     topRight: const Radius.circular(26),
@@ -62,28 +63,14 @@ class MessageBubble extends StatelessWidget {
                     ),
                   ],
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      item.text,
-                      style: const TextStyle(
-                        color: AppColors.textPrimary,
-                        fontSize: 16,
-                        height: 1.55,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      item.time,
-                      style: const TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  item.text,
+                  style: const TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 16,
+                    height: 1.55,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             ),

@@ -85,7 +85,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   int _selectedSessionIndex = 0;
   String? _statusMessage;
-  IconData? _statusIcon;
+  String? _statusImagePath;
 
   final List<ApiCostModel> _apiCosts = const [
     ApiCostModel(name: 'Instagram Reels API', price: '0.006 USDC'),
@@ -132,68 +132,69 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<void> _sendMessage() async {
-    final text = _controller.text.trim();
-    if (text.isEmpty) return;
+  final text = _controller.text.trim();
+  if (text.isEmpty) return;
 
-    setState(() {
-      _currentSession.messages.add(
-        ChatItemModel(
-          isUser: true,
-          text: text,
-          time: '오후 03:42',
-        ),
-      );
+  setState(() {
+    _currentSession.messages.add(
+      ChatItemModel(
+        isUser: true,
+        text: text,
+        time: '오후 03:42',
+      ),
+    );
 
-      _controller.clear();
-      _currentSession.showCostCard = false;
-      _currentSession.showResultCard = false;
-      _currentSession.subtitle = text;
-      _currentSession.title = text.length > 12 ? '${text.substring(0, 12)}...' : text;
-      _currentSession.date = '방금';
+    _controller.clear();
+    _currentSession.showCostCard = false;
+    _currentSession.showResultCard = false;
+    _currentSession.subtitle = text;
+    _currentSession.title =
+        text.length > 12 ? '${text.substring(0, 12)}...' : text;
+    _currentSession.date = '방금';
 
-      _statusMessage = 'Tiny가 요청 내용을 분석하고 있어요...';
-      _statusIcon = Icons.search_rounded;
-    });
-    _scrollToBottom();
+    _statusMessage = 'Tiny가 요청 내용을 분석하고 있어요...';
+    _statusImagePath = 'assets/images/tiny6.png';
+  });
+  _scrollToBottom();
 
-    await Future.delayed(const Duration(seconds: 1));
+  await Future.delayed(const Duration(seconds: 1));
 
-    if (!mounted) return;
-    setState(() {
-      _statusMessage = '필요한 API와 예상 비용을 계산하고 있어요...';
-      _statusIcon = Icons.calculate_rounded;
-    });
-    _scrollToBottom();
+  if (!mounted) return;
+  setState(() {
+    _statusMessage = '필요한 API와 예상 비용을 계산하고 있어요...';
+    _statusImagePath = 'assets/images/tiny6.png';
+  });
+  _scrollToBottom();
 
-    await Future.delayed(const Duration(seconds: 1));
+  await Future.delayed(const Duration(seconds: 1));
 
-    if (!mounted) return;
-    setState(() {
-      _statusMessage = null;
-      _statusIcon = null;
-      _currentSession.showCostCard = true;
-    });
-    _scrollToBottom();
+  if (!mounted) return;
+  setState(() {
+    _statusMessage = null;
+    _statusImagePath = null;
+    _currentSession.showCostCard = true;
+  });
+  _scrollToBottom();
 
-    await Future.delayed(const Duration(seconds: 1));
+  await Future.delayed(const Duration(seconds: 1));
 
-    if (!mounted) return;
-    setState(() {
-      _statusMessage = '자동결제 후 결과를 생성하고 있어요...';
-      _statusIcon = Icons.auto_awesome_rounded;
-    });
-    _scrollToBottom();
+  if (!mounted) return;
+  setState(() {
+    _statusMessage = '자동결제 후 결과를 생성하고 있어요...';
+    _statusImagePath = 'assets/images/tiny6.png';
+  });
+  _scrollToBottom();
 
-    await Future.delayed(const Duration(seconds: 1));
+  await Future.delayed(const Duration(seconds: 1));
 
-    if (!mounted) return;
-    setState(() {
-      _statusMessage = null;
-      _statusIcon = null;
-      _currentSession.showResultCard = true;
-    });
-    _scrollToBottom();
-  }
+  if (!mounted) return;
+  setState(() {
+    _statusMessage = null;
+    _statusImagePath = null;
+    _currentSession.showResultCard = true;
+  });
+  _scrollToBottom();
+}
 
   void _startNewChat() {
     setState(() {
@@ -217,7 +218,7 @@ class _ChatScreenState extends State<ChatScreen> {
       );
       _selectedSessionIndex = 0;
       _statusMessage = null;
-      _statusIcon = null;
+      _statusImagePath = null;
     });
 
     Navigator.pop(context);
@@ -227,7 +228,7 @@ class _ChatScreenState extends State<ChatScreen> {
     setState(() {
       _selectedSessionIndex = index;
       _statusMessage = null;
-      _statusIcon = null;
+      _statusImagePath = null;
     });
     Navigator.pop(context);
     _scrollToBottom();
@@ -280,7 +281,7 @@ class _ChatScreenState extends State<ChatScreen> {
         );
         _selectedSessionIndex = 0;
         _statusMessage = null;
-        _statusIcon = null;
+        _statusImagePath = null;
       });
       return;
     }
@@ -297,7 +298,7 @@ class _ChatScreenState extends State<ChatScreen> {
       }
 
       _statusMessage = null;
-      _statusIcon = null;
+      _statusImagePath = null;
     });
   }
 
@@ -314,44 +315,82 @@ class _ChatScreenState extends State<ChatScreen> {
         onDeleteSession: _confirmDeleteSession,
       ),
       appBar: AppBar(
-        backgroundColor: AppColors.surface,
-        elevation: 0,
-        leading: IconButton(
+  backgroundColor: AppColors.background,
+  elevation: 0,
+  scrolledUnderElevation: 0,
+  toolbarHeight: 96,
+  automaticallyImplyLeading: false,
+  titleSpacing: 4,
+  title: Container(
+    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(28),
+      border: Border.all(color: AppColors.border),
+      boxShadow: const [
+        BoxShadow(
+          color: Color(0x0F000000),
+          blurRadius: 18,
+          offset: Offset(0, 8),
+        ),
+      ],
+    ),
+    child: Row(
+      children: [
+        IconButton(
           onPressed: () {
             _scaffoldKey.currentState?.openDrawer();
           },
           icon: const Icon(Icons.menu_rounded),
           color: AppColors.textPrimary,
         ),
-        title: const Row(
-          children: [
-            Icon(Icons.chat_bubble_outline_rounded, color: AppColors.primary),
-            SizedBox(width: 8),
-            Text(
-              'TINY',
-              style: TextStyle(
-                color: AppColors.primary,
-                fontSize: 22,
-                fontWeight: FontWeight.w800,
+
+        const SizedBox(width: 10),
+
+        const Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Tiny AI Agent',
+                style: TextStyle(
+                  color: AppColors.textPrimary,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                ),
               ),
-            ),
-          ],
+              SizedBox(height: 4),
+              Row(
+                children: [
+                  Text(
+                    '자동결제 활성화됨',
+                    style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  SizedBox(width: 6),
+                  Icon(
+                    Icons.circle,
+                    color: AppColors.success,
+                    size: 8,
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
-        actions: [
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.notifications_none_rounded),
-            color: AppColors.textPrimary,
-          ),
-          IconButton(
-            onPressed: _logout,
-            icon: const Icon(Icons.logout_rounded),
-            color: AppColors.textPrimary,
-            tooltip: '로그아웃',
-          ),
-          const SizedBox(width: 4),
-        ],
-      ),
+
+        IconButton(
+          onPressed: () {},
+          icon: const Icon(Icons.notifications_none_rounded),
+          color: AppColors.textPrimary,
+        ),
+      ],
+    ),
+  ),
+),
       body: SafeArea(
         child: Column(
           children: [
@@ -367,7 +406,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     const SizedBox(height: 12),
                     TinyStatusCard(
                       message: _statusMessage!,
-                      icon: _statusIcon ?? Icons.auto_awesome_rounded,
+                      imagePath: _statusImagePath ?? 'assets/images/tiny6.png',
                     ),
                   ],
                   if (_currentSession.showCostCard) ...[
