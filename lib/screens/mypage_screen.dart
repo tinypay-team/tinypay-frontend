@@ -21,6 +21,8 @@ import '../dialogs/mypage/wallet_dialog.dart';
 import '../theme/app_colors.dart';
 import 'wallet/phone_verification_screen.dart';
 import 'wallet/charge_screen.dart';
+import '../widgets/mypage/auto_payment_card.dart';
+import '../widgets/mypage/ai_service_usage_item.dart';
 
 class MyPageScreen extends StatefulWidget {
   const MyPageScreen({super.key});
@@ -173,8 +175,10 @@ Future<void> _goToChargeScreen() async {
 }
 
   void _showBudgetDialog() {
-  showDialog(
+  showModalBottomSheet(
     context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
     builder: (context) {
       return BudgetDialog(
         monthlyBudget: budget!.monthlyBudget,
@@ -190,8 +194,10 @@ Future<void> _goToChargeScreen() async {
 }
 
   void _showLimitDialog() {
-  showDialog(
+  showModalBottomSheet(
     context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
     builder: (context) {
       return LimitDialog(
         singleLimit: budget!.singleLimit,
@@ -206,8 +212,10 @@ Future<void> _goToChargeScreen() async {
 }
 
   void _showPaymentHistoryDialog() {
-  showDialog(
+  showModalBottomSheet(
     context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
     builder: (context) {
       return PaymentHistoryDialog(
         paymentHistory: paymentHistory,
@@ -295,7 +303,16 @@ Future<void> _goToChargeScreen() async {
                 ? _showWalletDialog
                 : _goToPhoneVerification,
             ),
-            const SizedBox(height: 22),
+            const SizedBox(height: 18),
+            AutoPaymentCard(
+              enabled: autoPaymentEnabled,
+              onToggle: () {
+                setState(() {
+                  autoPaymentEnabled = !autoPaymentEnabled;
+                });
+              },
+            ),
+            const SizedBox(height: 18),
             BudgetCard(
               monthlySpent: budget!.monthlySpent,
               monthlyBudget: budget!.monthlyBudget,
@@ -307,27 +324,106 @@ Future<void> _goToChargeScreen() async {
               onTap: _showLimitDialog,
             ),
             const SizedBox(height: 24),
-            PaymentSectionHeader(
-              onViewAllTap: _showPaymentHistoryDialog,
-            ),
-            const SizedBox(height: 14),
-            const PaymentItem(
-              icon: Icons.auto_awesome,
-              title: 'GPT-4 Text Generation',
-              date: '4월 7일 오후 03:29',
-              amount: '-USDC 0.02',
-              iconBackground: Colors.black,
-              iconColor: Colors.white,
-            ),
-            const SizedBox(height: 12),
-            const PaymentItem(
-              icon: Icons.image_search_outlined,
-              title: 'Image Analysis API',
-              date: '4월 7일 오후 01:59',
-              amount: '-USDC 0.03',
-              iconBackground:  Color(0xFFE9ECFF),
-              iconColor: primaryColor,
-            ),
+
+Row(
+  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  children: [
+    const Text(
+      'AI 서비스 사용 내역',
+      style: TextStyle(
+        color: AppColors.textPrimary,
+        fontSize: 22,
+        fontWeight: FontWeight.w900,
+      ),
+    ),
+
+    GestureDetector(
+      onTap: _showPaymentHistoryDialog,
+      child: const Text(
+        '전체보기',
+        style: TextStyle(
+          color: AppColors.primary,
+          fontSize: 14,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+    ),
+  ],
+),
+
+const SizedBox(height: 16),
+
+Container(
+  padding: const EdgeInsets.fromLTRB(18, 18, 18, 2),
+  decoration: BoxDecoration(
+    color: Colors.white,
+    borderRadius: BorderRadius.circular(28),
+    border: Border.all(color: AppColors.border),
+  ),
+  child: const Column(
+    children: [
+      AiServiceUsageItem(
+        icon: Icons.video_collection_rounded,
+        title: '릴스 분석 요청',
+        time: '오늘 15:42',
+        amount: '0.006 USDC',
+        iconBackground: Color(0xFFFFEAF3),
+        iconColor: Color(0xFFE84393),
+      ),
+
+      AiServiceUsageItem(
+        icon: Icons.image_rounded,
+        title: '이미지 생성',
+        time: '오늘 14:17',
+        amount: '0.009 USDC',
+        iconBackground: Color(0xFFEAF0FF),
+        iconColor: AppColors.primary,
+      ),
+
+      AiServiceUsageItem(
+        icon: Icons.bar_chart_rounded,
+        title: '데이터 분석 요청',
+        time: '오늘 11:03',
+        amount: '0.005 USDC',
+        iconBackground: Color(0xFFEFF8FF),
+        iconColor: Color(0xFF3B82F6),
+      ),
+
+      AiServiceUsageItem(
+        icon: Icons.mic_rounded,
+        title: 'AI 음성 생성',
+        time: '어제 21:30',
+        amount: '0.003 USDC',
+        iconBackground: Color(0xFFF3F0FF),
+        iconColor: Color(0xFF7C3AED),
+      ),
+    ],
+  ),
+),
+
+const SizedBox(height: 22),
+
+Row(
+  children: [
+    Expanded(
+      child: const StatCard(
+        icon: '📊',
+        label: '이번 달 거래',
+        value: '28건',
+      ),
+    ),
+    const SizedBox(width: 16),
+    Expanded(
+      child: const StatCard(
+        icon: '💰',
+        label: '평균 거래액',
+        value: 'USDC 0.015',
+      ),
+    ),
+  ],
+),
+            
+           
             const SizedBox(height: 22),
             Row(
               children: [

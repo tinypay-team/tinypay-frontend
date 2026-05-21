@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'main_navigation_screen.dart';
+import 'package:flutter/services.dart';
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
@@ -36,7 +37,7 @@ class LoginScreen extends StatelessWidget {
 
   Future<void> _signInWithGoogle(BuildContext context) async {
     try {
-
+      
       final GoogleSignIn googleSignIn = GoogleSignIn(
         scopes: ['email', 'profile'],
         serverClientId: '887536055216-cdd6ra0vvmpn41sadd5uni1v6q42sa2c.apps.googleusercontent.com'
@@ -51,11 +52,21 @@ class LoginScreen extends StatelessWidget {
 
       final GoogleSignInAuthentication auth =
           await user.authentication;
+      
+      final token = auth.idToken ?? '';
+      await Clipboard.setData(ClipboardData(text: token));
+      print('TOKEN LENGTH: ${token.length} (clipboard에 복사됨)');
+      print('TOKEN LENGTH: ${token.length}');
+      print(token);
 
       print('이름: ${user.displayName}');
       print('이메일: ${user.email}');
+      debugPrint('현재시간: ${DateTime.now()}');
       print('프로필 이미지: ${user.photoUrl}');
-      print('idToken: ${auth.idToken}');
+      print('TOKEN LENGTH: ${auth.idToken?.length}');
+      print('TOKEN_START');
+      print(auth.idToken);
+      print('TOKEN_END');
       print('accessToken: ${auth.accessToken}');
 
       // TODO:

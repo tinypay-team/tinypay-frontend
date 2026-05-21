@@ -55,7 +55,7 @@ class BalanceCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    '총 잔액',
+                    '내 지갑 잔액',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 17,

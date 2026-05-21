@@ -47,19 +47,12 @@ class WalletCreatedScreen extends StatelessWidget {
           children: [
             const Spacer(),
 
-            Container(
-              width: 110,
-              height: 110,
-              decoration: const BoxDecoration(
-                color: Color(0xFFE9ECFF),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.account_balance_wallet_rounded,
-                size: 58,
-                color: Color(0xFF5B5CF6),
-              ),
-            ),
+            Image.asset(
+  'assets/images/tinypay2.png',
+  width: 210,
+  height: 210,
+  fit: BoxFit.contain,
+),
 
             const SizedBox(height: 28),
 
@@ -98,7 +91,7 @@ class WalletCreatedScreen extends StatelessWidget {
               child: Column(
                 children: [
                   const Text(
-                    '입금 주소',
+                    '지갑 주소',
                     style: TextStyle(
                       fontSize: 14,
                       color: Colors.black54,
@@ -133,7 +126,17 @@ class WalletCreatedScreen extends StatelessWidget {
               width: double.infinity,
               height: 54,
               child: ElevatedButton(
-                onPressed: () => goBackToMyPage(context),
+                onPressed: () {
+  Navigator.pushAndRemoveUntil(
+    context,
+    MaterialPageRoute(
+      builder: (_) => const MainNavigationScreen(
+        initialIndex: 1,
+      ),
+    ),
+    (route) => false,
+  );
+},
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF5B5CF6),
                   foregroundColor: Colors.white,
