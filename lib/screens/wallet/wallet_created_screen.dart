@@ -21,15 +21,9 @@ class WalletCreatedScreen extends StatelessWidget {
   }
 
   void goBackToMyPage(BuildContext context) {
-  WalletState.isWalletCreated = true;
+  WalletState.connectWallet();
 
-  Navigator.pushAndRemoveUntil(
-    context,
-    MaterialPageRoute(
-      builder: (_) => const MainNavigationScreen(),
-    ),
-    (route) => false,
-  );
+  Navigator.pop(context, true);
 }
 
   @override
@@ -127,6 +121,7 @@ class WalletCreatedScreen extends StatelessWidget {
               height: 54,
               child: ElevatedButton(
                 onPressed: () {
+                  WalletState.connectWallet();
                   Navigator.pop(context, true);
                 },
                 style: ElevatedButton.styleFrom(

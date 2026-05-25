@@ -12,6 +12,7 @@ import '../widgets/chat/result_card.dart';
 import '../widgets/chat/chat_input_area.dart';
 import '../widgets/chat/chat_drawer.dart';
 import '../widgets/chat/tiny_status_card.dart';
+import '../services/chat_service.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -24,6 +25,7 @@ class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  final ChatService _chatService = ChatService();
 
   final List<ChatSessionModel> _sessions = [
     ChatSessionModel(
@@ -87,13 +89,9 @@ class _ChatScreenState extends State<ChatScreen> {
   String? _statusMessage;
   String? _statusImagePath;
 
-  final List<ApiCostModel> _apiCosts = const [
-    ApiCostModel(name: 'Instagram Reels API', price: '0.006 USDC'),
-    ApiCostModel(name: 'Video Analysis API', price: '0.009 USDC'),
-    ApiCostModel(name: 'AI Voice Generator API', price: '0.005 USDC'),
-  ];
-
-  int get _totalCostWon => 450;
+  List<ApiCostModel> _apiCosts = [];
+  String _totalCostUsdc = '0.00 USDC';
+  int _totalCostWon = 0;
 
   ChatSessionModel get _currentSession => _sessions[_selectedSessionIndex];
 
@@ -168,10 +166,19 @@ class _ChatScreenState extends State<ChatScreen> {
 
   await Future.delayed(const Duration(seconds: 1));
 
+  final apiCosts = await _chatService.getEstimatedApiCosts(text);
+  final totalCostUsdc = await _chatService.getTotalCostUsdc(text);
+  final totalCostWon = await _chatService.getTotalCostWon(text);
+
   if (!mounted) return;
   setState(() {
     _statusMessage = null;
     _statusImagePath = null;
+
+    _apiCosts = apiCosts;
+    _totalCostUsdc = totalCostUsdc;
+    _totalCostWon = totalCostWon;
+
     _currentSession.showCostCard = true;
   });
   _scrollToBottom();
@@ -413,7 +420,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     const SizedBox(height: 16),
                     CostAnalysisCard(
                       apiCosts: _apiCosts,
-                      totalCostUsdc: '0.02 USDC',
+                      totalCostUsdc: _totalCostUsdc,
                       totalCostWon: _totalCostWon,
                     ),
                   ],
