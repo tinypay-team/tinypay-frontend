@@ -25,6 +25,7 @@ import '../widgets/mypage/auto_payment_card.dart';
 import '../widgets/mypage/ai_service_usage_item.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'login_screen.dart';
+import '../services/auth_service.dart';
 
 class MyPageScreen extends StatefulWidget {
   const MyPageScreen({super.key});
@@ -128,22 +129,28 @@ Future<void> _goToChargeScreen() async {
         },
         onWithdrawTap: _showWithdrawDialog,
         onLogoutTap: () async {
-  Navigator.pop(context);
+          Navigator.pop(context);
 
-  final prefs = await SharedPreferences.getInstance();
+          try {
+            final authService = AuthService();
+            await authService.logout();
+          } catch (e) {
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.remove('accessToken');
+            await prefs.remove('refreshToken');
+            await prefs.setBool('isLoggedIn', false);
+          }
 
-  await prefs.setBool('isLoggedIn', false);
+          if (!mounted) return;
 
-  if (!mounted) return;
-
-  Navigator.pushAndRemoveUntil(
-    context,
-    MaterialPageRoute(
-      builder: (_) => const LoginScreen(),
-    ),
-    (route) => false,
-  );
-},
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const LoginScreen(),
+            ),
+            (route) => false,
+          );
+        },
       );
     },
   );

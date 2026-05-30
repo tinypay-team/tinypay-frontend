@@ -3,17 +3,12 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../data/dummy_data.dart';
-import '../models/budget_model.dart';
-import '../models/payment_model.dart';
 import '../models/user_model.dart';
-import '../models/wallet_model.dart';
-import 'wallet_state.dart';
 
-class MyPageService {
+class UserService {
   static const String baseUrl = 'http://백엔드주소';
 
-  Future<Map<String, dynamic>> getMyPage() async {
+  Future<UserModel> getMe() async {
     final prefs = await SharedPreferences.getInstance();
     final accessToken = prefs.getString('accessToken');
 
@@ -22,7 +17,7 @@ class MyPageService {
     }
 
     final response = await http.get(
-      Uri.parse('$baseUrl/api/mypage'),
+      Uri.parse('$baseUrl/api/users/me'),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $accessToken',
@@ -32,35 +27,24 @@ class MyPageService {
     final responseBody = _decodeResponse(response);
 
     if (response.statusCode == 200) {
-      return responseBody['data'] as Map<String, dynamic>;
+      final user = responseBody['data']['user'];
+
+      return UserModel(
+        name: user['nickname'] ?? '',
+        email: user['email'] ?? '',
+        avatar: '김',
+      );
     }
 
     throw Exception(
-      responseBody['message'] ?? '마이페이지 조회에 실패했습니다.',
+      responseBody['message'] ?? '내 정보 조회에 실패했습니다.',
     );
   }
 
-  Future<WalletModel> getWallet() async {
-    await Future.delayed(const Duration(milliseconds: 300));
-    return WalletState.wallet;
-  }
-
-  Future<UserModel> getUser() async {
-    await Future.delayed(const Duration(milliseconds: 300));
-    return dummyUser;
-  }
-
-  Future<BudgetModel> getBudget() async {
-    await Future.delayed(const Duration(milliseconds: 300));
-    return dummyBudget;
-  }
-
-  Future<List<PaymentModel>> getPaymentHistory() async {
-    await Future.delayed(const Duration(milliseconds: 300));
-    return dummyPaymentHistory;
-  }
-
-  Future<double> updatePerPaymentLimit(double perPaymentLimit) async {
+  Future<bool> updateProfile({
+    String? nickname,
+    String? profileImage,
+  }) async {
     final prefs = await SharedPreferences.getInstance();
     final accessToken = prefs.getString('accessToken');
 
@@ -69,54 +53,57 @@ class MyPageService {
     }
 
     final response = await http.patch(
-      Uri.parse('$baseUrl/api/budget-policy/per-payment-limit'),
+      Uri.parse('$baseUrl/api/users/me'),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $accessToken',
       },
       body: jsonEncode({
-        'perPaymentLimit': perPaymentLimit,
+        if (nickname != null) 'nickname': nickname,
+        if (profileImage != null) 'profileImage': profileImage,
       }),
     );
 
     final responseBody = _decodeResponse(response);
 
     if (response.statusCode == 200) {
-      return (responseBody['data']['perPaymentLimit'] as num).toDouble();
+      return true;
     }
 
     throw Exception(
-      responseBody['message'] ?? '1회 결제 한도 설정에 실패했습니다.',
+      responseBody['message'] ?? '내 정보 수정에 실패했습니다.',
     );
   }
 
-  Future<double> updateMonthlyBudget(double monthlyBudget) async {
+  Future<bool> deleteAccount() async {
     final prefs = await SharedPreferences.getInstance();
+
     final accessToken = prefs.getString('accessToken');
 
     if (accessToken == null || accessToken.isEmpty) {
       throw Exception('accessToken이 없습니다.');
     }
 
-    final response = await http.patch(
-      Uri.parse('$baseUrl/api/budget-policy/monthly-budget'),
+    final response = await http.delete(
+      Uri.parse('$baseUrl/api/users/me'),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $accessToken',
       },
-      body: jsonEncode({
-        'monthlyBudget': monthlyBudget,
-      }),
     );
 
     final responseBody = _decodeResponse(response);
 
     if (response.statusCode == 200) {
-      return (responseBody['data']['monthlyBudget'] as num).toDouble();
+      await prefs.remove('accessToken');
+      await prefs.remove('refreshToken');
+      await prefs.setBool('isLoggedIn', false);
+
+      return true;
     }
 
     throw Exception(
-      responseBody['message'] ?? '이번 달 예산 설정에 실패했습니다.',
+      responseBody['message'] ?? '회원 탈퇴에 실패했습니다.',
     );
   }
 

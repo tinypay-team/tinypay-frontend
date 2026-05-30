@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'main_navigation_screen.dart';
 import 'package:flutter/services.dart';
+import '../services/auth_service.dart';
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
@@ -71,6 +72,13 @@ class LoginScreen extends StatelessWidget {
 
       // TODO:
       // auth.idToken을 백엔드로 전송하면 됨
+
+      if (auth.idToken == null || auth.idToken!.isEmpty) {
+        throw Exception('Google idToken을 가져오지 못했습니다.');
+      }
+
+      final authService = AuthService();
+      await authService.loginWithGoogle(auth.idToken!);
 
       await _goToChatScreen(context, 'Google');
     } catch (e) {
