@@ -11,8 +11,31 @@ class PaymentHistoryDialog extends StatelessWidget {
     required this.paymentHistory,
   });
 
+  void _showApiDetailSheet(BuildContext context, PaymentModel item) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return _PaymentApiDetailSheet(payment: item);
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final totalAmount = paymentHistory.fold<double>(
+      0,
+      (sum, item) {
+        final numberText = item.amount
+            .replaceAll('USDC', '')
+            .replaceAll('-', '')
+            .trim();
+
+        return sum + (double.tryParse(numberText) ?? 0);
+      },
+    );
+
     return Container(
       height: MediaQuery.of(context).size.height * 0.82,
       padding: const EdgeInsets.fromLTRB(22, 12, 22, 24),
@@ -62,7 +85,7 @@ class PaymentHistoryDialog extends StatelessWidget {
                     ),
                     SizedBox(height: 4),
                     Text(
-                      'Tiny가 자동결제한 AI 서비스 기록이에요',
+                      '결제 내역을 누르면 사용된 API를 볼 수 있어요',
                       style: TextStyle(
                         color: AppColors.textSecondary,
                         fontSize: 13,
@@ -97,10 +120,15 @@ class PaymentHistoryDialog extends StatelessWidget {
                 itemBuilder: (context, index) {
                   final item = paymentHistory[index];
 
-                  return _HistoryUsageItem(
-                    title: item.title,
-                    time: item.time,
-                    amount: item.amount,
+                  return GestureDetector(
+                    onTap: () => _showApiDetailSheet(context, item),
+                    behavior: HitTestBehavior.opaque,
+                    child: _HistoryUsageItem(
+                      title: item.title,
+                      time: item.time,
+                      amount: item.amount,
+                      status: item.paymentStatus ?? 'COMPLETED',
+                    ),
                   );
                 },
               ),
@@ -140,9 +168,9 @@ class PaymentHistoryDialog extends StatelessWidget {
 
                 const SizedBox(width: 14),
 
-                const Text(
-                  '1.20 USDC',
-                  style: TextStyle(
+                Text(
+                  '${totalAmount.toStringAsFixed(3)} USDC',
+                  style: const TextStyle(
                     color: AppColors.primary,
                     fontSize: 20,
                     fontWeight: FontWeight.w900,
@@ -161,11 +189,13 @@ class _HistoryUsageItem extends StatelessWidget {
   final String title;
   final String time;
   final String amount;
+  final String status;
 
   const _HistoryUsageItem({
     required this.title,
     required this.time,
     required this.amount,
+    required this.status,
   });
 
   IconData get _icon {
@@ -216,6 +246,20 @@ class _HistoryUsageItem extends StatelessWidget {
     return AppColors.primary;
   }
 
+  String get _statusText {
+    if (status == 'COMPLETED') return '완료';
+    if (status == 'PENDING') return '대기';
+    if (status == 'FAILED') return '실패';
+    return '완료';
+  }
+
+  Color get _statusColor {
+    if (status == 'COMPLETED') return const Color(0xFF24B85A);
+    if (status == 'PENDING') return const Color(0xFFF59E0B);
+    if (status == 'FAILED') return const Color(0xFFEF4444);
+    return const Color(0xFF24B85A);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Row(
@@ -263,6 +307,8 @@ class _HistoryUsageItem extends StatelessWidget {
           ),
         ),
 
+        const SizedBox(width: 8),
+
         Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
@@ -275,17 +321,219 @@ class _HistoryUsageItem extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 4),
-            const Text(
-              '완료',
-              style: TextStyle(
-                color: Color(0xFF24B85A),
-                fontSize: 12,
-                fontWeight: FontWeight.w800,
-              ),
+            Row(
+              children: [
+                Text(
+                  _statusText,
+                  style: TextStyle(
+                    color: _statusColor,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                const Icon(
+                  Icons.chevron_right_rounded,
+                  color: AppColors.textSecondary,
+                  size: 18,
+                ),
+              ],
             ),
           ],
         ),
       ],
+    );
+  }
+}
+
+class _PaymentApiDetailSheet extends StatelessWidget {
+  final PaymentModel payment;
+
+  const _PaymentApiDetailSheet({
+    required this.payment,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    const usedApis = [
+      {
+        'name': 'Instagram Reels API',
+        'description': '릴스 트렌드 및 영상 구조 분석',
+        'cost': '0.006 USDC',
+      },
+      {
+        'name': 'Video Analysis API',
+        'description': '영상 패턴, 길이, 후킹 포인트 분석',
+        'cost': '0.009 USDC',
+      },
+      {
+        'name': 'AI Voice Generator API',
+        'description': '추천 음성 및 배경음 생성 비용',
+        'cost': '0.005 USDC',
+      },
+    ];
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(22, 12, 22, 26),
+      decoration: const BoxDecoration(
+        color: Color(0xFFFAF7FF),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(34),
+        ),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 44,
+            height: 5,
+            decoration: BoxDecoration(
+              color: const Color(0xFFD8D3E7),
+              borderRadius: BorderRadius.circular(999),
+            ),
+          ),
+
+          const SizedBox(height: 24),
+
+          Row(
+            children: [
+              Image.asset(
+                'assets/images/tinypay2.png',
+                width: 58,
+                height: 58,
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      '사용된 API 상세',
+                      style: TextStyle(
+                        color: AppColors.textPrimary,
+                        fontSize: 22,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      payment.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                onPressed: () => Navigator.pop(context),
+                icon: const Icon(Icons.close_rounded),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 20),
+
+          Container(
+            padding: const EdgeInsets.fromLTRB(18, 18, 18, 2),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(28),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: Column(
+              children: usedApis.map((api) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEAF0FF),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: const Icon(
+                          Icons.api_rounded,
+                          color: AppColors.primary,
+                          size: 23,
+                        ),
+                      ),
+
+                      const SizedBox(width: 14),
+
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              api['name']!,
+                              style: const TextStyle(
+                                color: AppColors.textPrimary,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              api['description']!,
+                              style: const TextStyle(
+                                color: AppColors.textSecondary,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                height: 1.35,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(width: 8),
+
+                      Text(
+                        api['cost']!,
+                        style: const TextStyle(
+                          color: AppColors.textPrimary,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+
+          const SizedBox(height: 18),
+
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF2F7FF),
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(
+                color: const Color(0xFFD7E7FF),
+              ),
+            ),
+            child: Text(
+              '총 결제 금액 · ${payment.amount}',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: AppColors.primary,
+                fontSize: 15,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
