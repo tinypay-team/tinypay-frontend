@@ -4,6 +4,8 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/api_cost_model.dart';
+import '../models/request_status_model.dart';
+import '../models/chat_message_model.dart';
 
 class ChatService {
   static const String baseUrl = 'http://백엔드주소';
@@ -154,6 +156,103 @@ class ChatService {
 
     throw Exception(
       responseBody['message'] ?? '요청 승인 및 결제에 실패했습니다.',
+    );
+  }
+
+  Future<RequestStatusModel> getRequestStatus({
+    required int requestId,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final accessToken = prefs.getString('accessToken');
+
+    if (accessToken == null || accessToken.isEmpty) {
+      throw Exception('accessToken이 없습니다.');
+    }
+
+    final response = await http.get(
+      Uri.parse('$baseUrl/api/requests/$requestId'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $accessToken',
+      },
+    );
+
+    final responseBody = _decodeResponse(response);
+
+    if (response.statusCode == 200) {
+      return RequestStatusModel.fromJson(
+        responseBody['data'],
+      );
+    }
+
+    throw Exception(
+      responseBody['message'] ?? 'AI 요청 상태 조회에 실패했습니다.',
+    );
+  }
+
+  Future<List<ChatMessageModel>> getChatMessages({
+    required int sessionId,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final accessToken = prefs.getString('accessToken');
+
+    if (accessToken == null || accessToken.isEmpty) {
+      throw Exception('accessToken이 없습니다.');
+    }
+
+    final response = await http.get(
+      Uri.parse('$baseUrl/api/chat/sessions/$sessionId/messages'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $accessToken',
+      },
+    );
+
+    final responseBody = _decodeResponse(response);
+
+    if (response.statusCode == 200) {
+      final data = responseBody['data'];
+
+      if (data is List) {
+        return data
+            .map((e) => ChatMessageModel.fromJson(e))
+            .toList();
+      }
+
+      return [];
+    }
+
+    throw Exception(
+      responseBody['message'] ?? '채팅 메시지 목록 조회에 실패했습니다.',
+    );
+  }
+
+  Future<bool> cancelRequest({
+    required int requestId,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final accessToken = prefs.getString('accessToken');
+
+    if (accessToken == null || accessToken.isEmpty) {
+      throw Exception('accessToken이 없습니다.');
+    }
+
+    final response = await http.patch(
+      Uri.parse('$baseUrl/api/requests/$requestId/cancel'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $accessToken',
+      },
+    );
+
+    final responseBody = _decodeResponse(response);
+
+    if (response.statusCode == 200) {
+      return true;
+    }
+
+    throw Exception(
+      responseBody['message'] ?? '결제 요청 취소에 실패했습니다.',
     );
   }
 
