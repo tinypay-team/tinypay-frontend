@@ -9,6 +9,16 @@ class UserModel {
     required this.avatar,
   });
 
+  factory UserModel.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    return UserModel(
+      name: json['nickname'] ?? '',
+      email: json['email'] ?? '',
+      avatar: json['profileImage'] ?? '',
+    );
+  }
+
   UserModel copyWith({
     String? name,
     String? email,

@@ -77,6 +77,10 @@ class LoginScreen extends StatelessWidget {
         throw Exception('Google idToken을 가져오지 못했습니다.');
       }
 
+      print('AUTH SERVICE 호출 직전');
+      print('idToken null? ${auth.idToken == null}');
+      print('idToken length: ${auth.idToken?.length}');
+
       final authService = AuthService();
       await authService.loginWithGoogle(auth.idToken!);
 

@@ -13,6 +13,7 @@ import '../widgets/chat/chat_input_area.dart';
 import '../widgets/chat/chat_drawer.dart';
 import '../widgets/chat/tiny_status_card.dart';
 import '../services/chat_service.dart';
+import '../services/auth_service.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -43,46 +44,6 @@ class _ChatScreenState extends State<ChatScreen> {
       showConfirmCard: false,
       showResultCard: false,
     ),
-    ChatSessionModel(
-      title: '이미지 생성',
-      subtitle: '고양이 이미지를 만들어줘',
-      date: '2026. 4. 7.',
-      messages: [
-        const ChatItemModel(
-          isUser: false,
-          text: '안녕하세요! 무엇을 도와드릴까요?',
-          time: '오후 01:15',
-        ),
-        const ChatItemModel(
-          isUser: true,
-          text: '귀여운 고양이 이미지를 만들어줘',
-          time: '오후 01:16',
-        ),
-      ],
-      showCostCard: false,
-      showConfirmCard: false,
-      showResultCard: false,
-    ),
-    ChatSessionModel(
-      title: '데이터 분석',
-      subtitle: '엑셀 파일 분석 부탁해',
-      date: '2026. 4. 6.',
-      messages: [
-        const ChatItemModel(
-          isUser: false,
-          text: '안녕하세요! 무엇을 도와드릴까요?',
-          time: '오전 11:02',
-        ),
-        const ChatItemModel(
-          isUser: true,
-          text: '엑셀 파일 분석 부탁해',
-          time: '오전 11:03',
-        ),
-      ],
-      showCostCard: false,
-      showConfirmCard: false,
-      showResultCard: false,
-    ),
   ];
 
   int _selectedSessionIndex = 0;
@@ -94,6 +55,59 @@ class _ChatScreenState extends State<ChatScreen> {
   int _totalCostWon = 0;
 
   ChatSessionModel get _currentSession => _sessions[_selectedSessionIndex];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSessions();
+  }
+
+  Future<void> _loadSessions() async {
+    print('CHAT SCREEN INIT');
+
+    try {
+      final apiSessions = await _chatService.getChatSessions();
+
+      print('SESSION COUNT: ${apiSessions.length}');
+
+      if (!mounted) return;
+
+      if (apiSessions.isEmpty) {
+        return;
+      }
+
+      setState(() {
+        _sessions.clear();
+
+        for (final session in apiSessions) {
+          final title = session['title']?.toString() ?? '새 채팅';
+          final createdAt = session['createdAt']?.toString() ?? '';
+
+          _sessions.add(
+            ChatSessionModel(
+              title: title,
+              subtitle: '무엇을 도와드릴까요?',
+              date: createdAt.isEmpty ? '방금' : createdAt,
+              messages: [
+                const ChatItemModel(
+                  isUser: false,
+                  text: '안녕하세요! 무엇을 도와드릴까요?',
+                  time: '',
+                ),
+              ],
+              showCostCard: false,
+              showConfirmCard: false,
+              showResultCard: false,
+            ),
+          );
+        }
+
+        _selectedSessionIndex = 0;
+      });
+    } catch (e) {
+      print('GET CHAT SESSIONS ERROR: $e');
+    }
+  }
 
   @override
   void dispose() {
@@ -129,81 +143,125 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  Future<void> _sendMessage() async {
-  final text = _controller.text.trim();
-  if (text.isEmpty) return;
+  Future<void> _testRefreshToken() async {
+  try {
+    final result = await AuthService().refreshToken();
 
-  setState(() {
-    _currentSession.messages.add(
-      ChatItemModel(
-        isUser: true,
-        text: text,
-        time: '오후 03:42',
-      ),
-    );
-
-    _controller.clear();
-    _currentSession.showCostCard = false;
-    _currentSession.showResultCard = false;
-    _currentSession.subtitle = text;
-    _currentSession.title =
-        text.length > 12 ? '${text.substring(0, 12)}...' : text;
-    _currentSession.date = '방금';
-
-    _statusMessage = 'Tiny가 요청 내용을 분석하고 있어요...';
-    _statusImagePath = 'assets/images/tiny6.png';
-  });
-  _scrollToBottom();
-
-  await Future.delayed(const Duration(seconds: 1));
-
-  if (!mounted) return;
-  setState(() {
-    _statusMessage = '필요한 API와 예상 비용을 계산하고 있어요...';
-    _statusImagePath = 'assets/images/tiny6.png';
-  });
-  _scrollToBottom();
-
-  await Future.delayed(const Duration(seconds: 1));
-
-  final apiCosts = await _chatService.getEstimatedApiCosts(text);
-  final totalCostUsdc = await _chatService.getTotalCostUsdc(text);
-  final totalCostWon = await _chatService.getTotalCostWon(text);
-
-  if (!mounted) return;
-  setState(() {
-    _statusMessage = null;
-    _statusImagePath = null;
-
-    _apiCosts = apiCosts;
-    _totalCostUsdc = totalCostUsdc;
-    _totalCostWon = totalCostWon;
-
-    _currentSession.showCostCard = true;
-  });
-  _scrollToBottom();
-
-  await Future.delayed(const Duration(seconds: 1));
-
-  if (!mounted) return;
-  setState(() {
-    _statusMessage = '자동결제 후 결과를 생성하고 있어요...';
-    _statusImagePath = 'assets/images/tiny6.png';
-  });
-  _scrollToBottom();
-
-  await Future.delayed(const Duration(seconds: 1));
-
-  if (!mounted) return;
-  setState(() {
-    _statusMessage = null;
-    _statusImagePath = null;
-    _currentSession.showResultCard = true;
-  });
-  _scrollToBottom();
+    print('REFRESH RESULT: $result');
+  } catch (e) {
+    print('REFRESH ERROR: $e');
+  }
 }
 
-  void _startNewChat() {
+  Future<void> _sendMessage() async {
+    final text = _controller.text.trim();
+    try {
+    final result = await _chatService.sendMessage(
+      sessionId: 1,
+      content: text,
+    );
+
+    print('SEND MESSAGE RESULT: $result');
+
+    final requestId = result['requestId'];
+
+    print('REQUEST ID: $requestId');
+
+    if (requestId != null) {
+      final status = await _chatService.getRequestStatus(
+        requestId: requestId,
+      );
+
+      print(
+        'REQUEST STATUS RESULT: ${status.requestStatus}',
+      );
+    }
+
+  } catch (e) {
+    print('SEND MESSAGE ERROR: $e');
+  }
+    if (text.isEmpty) return;
+
+    setState(() {
+      _currentSession.messages.add(
+        ChatItemModel(
+          isUser: true,
+          text: text,
+          time: '오후 03:42',
+        ),
+      );
+
+      _controller.clear();
+      _currentSession.showCostCard = false;
+      _currentSession.showResultCard = false;
+      _currentSession.subtitle = text;
+      _currentSession.title =
+          text.length > 12 ? '${text.substring(0, 12)}...' : text;
+      _currentSession.date = '방금';
+
+      _statusMessage = 'Tiny가 요청 내용을 분석하고 있어요...';
+      _statusImagePath = 'assets/images/tiny6.png';
+    });
+    _scrollToBottom();
+
+    await Future.delayed(const Duration(seconds: 1));
+
+    if (!mounted) return;
+    setState(() {
+      _statusMessage = '필요한 API와 예상 비용을 계산하고 있어요...';
+      _statusImagePath = 'assets/images/tiny6.png';
+    });
+    _scrollToBottom();
+
+    await Future.delayed(const Duration(seconds: 1));
+
+    final apiCosts = await _chatService.getEstimatedApiCosts(text);
+    final totalCostUsdc = await _chatService.getTotalCostUsdc(text);
+    final totalCostWon = await _chatService.getTotalCostWon(text);
+
+    if (!mounted) return;
+    setState(() {
+      _statusMessage = null;
+      _statusImagePath = null;
+
+      _apiCosts = apiCosts;
+      _totalCostUsdc = totalCostUsdc;
+      _totalCostWon = totalCostWon;
+
+      _currentSession.showCostCard = true;
+    });
+    _scrollToBottom();
+
+    await Future.delayed(const Duration(seconds: 1));
+
+    if (!mounted) return;
+    setState(() {
+      _statusMessage = '자동결제 후 결과를 생성하고 있어요...';
+      _statusImagePath = 'assets/images/tiny6.png';
+    });
+    _scrollToBottom();
+
+    await Future.delayed(const Duration(seconds: 1));
+
+    if (!mounted) return;
+    setState(() {
+      _statusMessage = null;
+      _statusImagePath = null;
+      _currentSession.showResultCard = true;
+    });
+    _scrollToBottom();
+  }
+
+  Future<void> _startNewChat() async {
+    try {
+      final sessionId = await _chatService.createChatSession();
+      print('CREATE CHAT SESSION ID: $sessionId');
+    } catch (e) {
+      print('CREATE CHAT SESSION ERROR: $e');
+    }
+
+    if (!mounted) return;
+
     setState(() {
       _sessions.insert(
         0,
@@ -322,82 +380,79 @@ class _ChatScreenState extends State<ChatScreen> {
         onDeleteSession: _confirmDeleteSession,
       ),
       appBar: AppBar(
-  backgroundColor: AppColors.background,
-  elevation: 0,
-  scrolledUnderElevation: 0,
-  toolbarHeight: 96,
-  automaticallyImplyLeading: false,
-  titleSpacing: 4,
-  title: Container(
-    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(28),
-      border: Border.all(color: AppColors.border),
-      boxShadow: const [
-        BoxShadow(
-          color: Color(0x0F000000),
-          blurRadius: 18,
-          offset: Offset(0, 8),
-        ),
-      ],
-    ),
-    child: Row(
-      children: [
-        IconButton(
-          onPressed: () {
-            _scaffoldKey.currentState?.openDrawer();
-          },
-          icon: const Icon(Icons.menu_rounded),
-          color: AppColors.textPrimary,
-        ),
-
-        const SizedBox(width: 10),
-
-        const Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        backgroundColor: AppColors.background,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        toolbarHeight: 96,
+        automaticallyImplyLeading: false,
+        titleSpacing: 4,
+        title: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(color: AppColors.border),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x0F000000),
+                blurRadius: 18,
+                offset: Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Row(
             children: [
-              Text(
-                'Tiny AI Agent',
-                style: TextStyle(
-                  color: AppColors.textPrimary,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w900,
+              IconButton(
+                onPressed: () {
+                  _scaffoldKey.currentState?.openDrawer();
+                },
+                icon: const Icon(Icons.menu_rounded),
+                color: AppColors.textPrimary,
+              ),
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Tiny AI Agent',
+                      style: TextStyle(
+                        color: AppColors.textPrimary,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Text(
+                          '자동결제 활성화됨',
+                          style: TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        SizedBox(width: 6),
+                        Icon(
+                          Icons.circle,
+                          color: AppColors.success,
+                          size: 8,
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
-              SizedBox(height: 4),
-              Row(
-                children: [
-                  Text(
-                    '자동결제 활성화됨',
-                    style: TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  SizedBox(width: 6),
-                  Icon(
-                    Icons.circle,
-                    color: AppColors.success,
-                    size: 8,
-                  ),
-                ],
+              IconButton(
+                onPressed: _testRefreshToken,
+                icon: const Icon(Icons.notifications_none_rounded),
+                color: AppColors.textPrimary,
               ),
             ],
           ),
         ),
-
-        IconButton(
-          onPressed: () {},
-          icon: const Icon(Icons.notifications_none_rounded),
-          color: AppColors.textPrimary,
-        ),
-      ],
-    ),
-  ),
-),
+      ),
       body: SafeArea(
         child: Column(
           children: [

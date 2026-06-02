@@ -8,7 +8,7 @@ import '../models/request_status_model.dart';
 import '../models/chat_message_model.dart';
 
 class ChatService {
-  static const String baseUrl = 'http://백엔드주소';
+  static const String baseUrl = 'http://3.34.134.67:8080';
 
   Future<List<ApiCostModel>> getEstimatedApiCosts(String message) async {
     await Future.delayed(const Duration(milliseconds: 500));
@@ -40,6 +40,8 @@ class ChatService {
       throw Exception('accessToken이 없습니다.');
     }
 
+    print('GET CHAT SESSIONS START');
+
     final response = await http.get(
       Uri.parse('$baseUrl/api/chat/sessions'),
       headers: {
@@ -47,6 +49,9 @@ class ChatService {
         'Authorization': 'Bearer $accessToken',
       },
     );
+
+    print('GET CHAT SESSIONS STATUS: ${response.statusCode}');
+    print('GET CHAT SESSIONS BODY: ${response.body}');
 
     final responseBody = _decodeResponse(response);
 
@@ -66,6 +71,8 @@ class ChatService {
   }
 
   Future<int> createChatSession() async {
+    print('CREATE SESSION START');
+
     final prefs = await SharedPreferences.getInstance();
     final accessToken = prefs.getString('accessToken');
 
@@ -82,10 +89,17 @@ class ChatService {
       body: jsonEncode({}),
     );
 
+    print('CREATE SESSION STATUS: ${response.statusCode}');
+    print('CREATE SESSION BODY: ${response.body}');
+
     final responseBody = _decodeResponse(response);
 
     if (response.statusCode == 201) {
-      return responseBody['data']['sessionId'];
+      final sessionId = responseBody['data']['sessionId'];
+
+      print('CREATED SESSION ID: $sessionId');
+
+      return sessionId;
     }
 
     throw Exception(
@@ -97,6 +111,8 @@ class ChatService {
     required int sessionId,
     required String content,
   }) async {
+    print('SEND MESSAGE START');
+
     final prefs = await SharedPreferences.getInstance();
     final accessToken = prefs.getString('accessToken');
 
@@ -114,6 +130,9 @@ class ChatService {
         'content': content,
       }),
     );
+
+    print('SEND MESSAGE STATUS: ${response.statusCode}');
+    print('SEND MESSAGE BODY: ${response.body}');
 
     final responseBody = _decodeResponse(response);
 
@@ -162,6 +181,8 @@ class ChatService {
   Future<RequestStatusModel> getRequestStatus({
     required int requestId,
   }) async {
+    print('GET REQUEST STATUS START');
+
     final prefs = await SharedPreferences.getInstance();
     final accessToken = prefs.getString('accessToken');
 
@@ -176,6 +197,9 @@ class ChatService {
         'Authorization': 'Bearer $accessToken',
       },
     );
+
+    print('GET REQUEST STATUS STATUS: ${response.statusCode}');
+    print('GET REQUEST STATUS BODY: ${response.body}');
 
     final responseBody = _decodeResponse(response);
 

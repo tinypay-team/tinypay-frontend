@@ -4,9 +4,13 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthService {
-  static const String baseUrl = 'http://백엔드주소';
+  static const String baseUrl = 'http://3.34.134.67:8080';
 
   Future<bool> loginWithGoogle(String idToken) async {
+    print('LOGIN FUNCTION START');
+    print('POST REQUEST START');
+    print('$baseUrl/api/auth/google');
+    
     final response = await http.post(
       Uri.parse('$baseUrl/api/auth/google'),
       headers: {
@@ -16,6 +20,10 @@ class AuthService {
         'id_token': idToken,
       }),
     );
+
+    print('LOGIN STATUS: ${response.statusCode}');
+    print('LOGIN BODY: ${response.body}');
+    print('ID TOKEN LENGTH: ${idToken.length}');
 
     final responseBody = _decodeResponse(response);
 
@@ -52,6 +60,9 @@ class AuthService {
         'Authorization': 'Bearer $refreshToken',
       },
     );
+
+    print('REFRESH TOKEN STATUS: ${response.statusCode}');
+    print('REFRESH TOKEN BODY: ${response.body}');
 
     final responseBody = _decodeResponse(response);
 
@@ -102,6 +113,38 @@ class AuthService {
     }
 
     throw Exception(responseBody['message'] ?? '로그아웃에 실패했습니다.');
+  }
+
+  Future<bool> sendVerificationCode({
+    required String phoneNumber,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final accessToken = prefs.getString('accessToken');
+
+    if (accessToken == null || accessToken.isEmpty) {
+      throw Exception('accessToken이 없습니다.');
+    }
+
+    final response = await http.post(
+      Uri.parse('$baseUrl/api/auth/verification-code'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $accessToken',
+      },
+      body: jsonEncode({
+        'phoneNumber': phoneNumber,
+      }),
+    );
+
+    final responseBody = _decodeResponse(response);
+
+    if (response.statusCode == 200) {
+      return true;
+    }
+
+    throw Exception(
+      responseBody['message'] ?? '인증번호 발급에 실패했습니다.',
+    );
   }
 
   Map<String, dynamic> _decodeResponse(http.Response response) {

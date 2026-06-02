@@ -6,7 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_model.dart';
 
 class UserService {
-  static const String baseUrl = 'http://백엔드주소';
+  static const String baseUrl = 'http://3.34.134.67:8080';
 
   Future<UserModel> getMe() async {
     final prefs = await SharedPreferences.getInstance();
@@ -15,6 +15,8 @@ class UserService {
     if (accessToken == null || accessToken.isEmpty) {
       throw Exception('accessToken이 없습니다.');
     }
+
+    print('GET ME START');
 
     final response = await http.get(
       Uri.parse('$baseUrl/api/users/me'),
@@ -25,6 +27,9 @@ class UserService {
     );
 
     final responseBody = _decodeResponse(response);
+
+    print('GET ME STATUS: ${response.statusCode}');
+    print('GET ME BODY: ${response.body}');
 
     if (response.statusCode == 200) {
       final user = responseBody['data']['user'];
