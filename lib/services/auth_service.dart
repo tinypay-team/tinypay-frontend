@@ -87,6 +87,8 @@ class AuthService {
   }
 
   Future<bool> logout() async {
+    print('LOGOUT START');
+
     final prefs = await SharedPreferences.getInstance();
     final accessToken = prefs.getString('accessToken');
 
@@ -101,6 +103,9 @@ class AuthService {
         'Authorization': 'Bearer $accessToken',
       },
     );
+
+    print('LOGOUT STATUS: ${response.statusCode}');
+    print('LOGOUT BODY: ${response.body}');
 
     final responseBody = _decodeResponse(response);
 

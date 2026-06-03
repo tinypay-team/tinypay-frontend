@@ -116,20 +116,22 @@ Future<void> _goToChargeScreen() async {
   ];
 
   void _showProfileDialog() {
+  final parentContext = context;
+
   showDialog(
-    context: context,
-    builder: (context) {
+    context: parentContext,
+    builder: (dialogContext) {
       return ProfileDialog(
         userName: user!.name,
         userEmail: user!.email,
         selectedAvatar: user!.avatar,
         onEditProfileTap: () {
-          Navigator.pop(context);
+          Navigator.pop(dialogContext);
           _showEditProfileDialog();
         },
         onWithdrawTap: _showWithdrawDialog,
         onLogoutTap: () async {
-          Navigator.pop(context);
+          Navigator.pop(dialogContext);
 
           try {
             final authService = AuthService();
@@ -144,7 +146,7 @@ Future<void> _goToChargeScreen() async {
           if (!mounted) return;
 
           Navigator.pushAndRemoveUntil(
-            context,
+            parentContext,
             MaterialPageRoute(
               builder: (_) => const LoginScreen(),
             ),
@@ -249,6 +251,7 @@ Future<void> _goToChargeScreen() async {
     super.initState();
     _loadMyPageData();
   }
+
 
   @override
   void didChangeDependencies() {

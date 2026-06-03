@@ -1,6 +1,8 @@
 import 'chat_item_model.dart';
 
 class ChatSessionModel {
+  final int? sessionId;
+
   String title;
   String subtitle;
   String date;
@@ -12,6 +14,7 @@ class ChatSessionModel {
   bool showResultCard;
 
   ChatSessionModel({
+    this.sessionId,
     required this.title,
     required this.subtitle,
     required this.date,

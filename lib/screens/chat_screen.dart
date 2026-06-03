@@ -82,9 +82,11 @@ class _ChatScreenState extends State<ChatScreen> {
         for (final session in apiSessions) {
           final title = session['title']?.toString() ?? '새 채팅';
           final createdAt = session['createdAt']?.toString() ?? '';
+          final sessionId = session['sessionId'] as int?;
 
           _sessions.add(
             ChatSessionModel(
+              sessionId: sessionId,
               title: title,
               subtitle: '무엇을 도와드릴까요?',
               date: createdAt.isEmpty ? '방금' : createdAt,
@@ -143,44 +145,45 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  Future<void> _testRefreshToken() async {
-  try {
-    final result = await AuthService().refreshToken();
-
-    print('REFRESH RESULT: $result');
-  } catch (e) {
-    print('REFRESH ERROR: $e');
-  }
-}
-
   Future<void> _sendMessage() async {
     final text = _controller.text.trim();
-    try {
-    final result = await _chatService.sendMessage(
-      sessionId: 1,
-      content: text,
-    );
 
-    print('SEND MESSAGE RESULT: $result');
-
-    final requestId = result['requestId'];
-
-    print('REQUEST ID: $requestId');
-
-    if (requestId != null) {
-      final status = await _chatService.getRequestStatus(
-        requestId: requestId,
-      );
-
-      print(
-        'REQUEST STATUS RESULT: ${status.requestStatus}',
-      );
-    }
-
-  } catch (e) {
-    print('SEND MESSAGE ERROR: $e');
-  }
     if (text.isEmpty) return;
+
+    final sessionId = _currentSession.sessionId;
+
+    print('CURRENT SESSION ID: $sessionId');
+
+    // 메시지 전송 API 수정 예정
+    // API 확정 후 아래 코드 사용
+    /*
+    if (sessionId != null) {
+      try {
+        final result = await _chatService.sendMessage(
+          sessionId: sessionId,
+          content: text,
+        );
+
+        print('SEND MESSAGE RESULT: $result');
+
+        final requestId = result['requestId'];
+
+        print('REQUEST ID: $requestId');
+
+        if (requestId != null) {
+          final status = await _chatService.getRequestStatus(
+            requestId: requestId,
+          );
+
+          print(
+            'REQUEST STATUS RESULT: ${status.requestStatus}',
+          );
+        }
+      } catch (e) {
+        print('SEND MESSAGE ERROR: $e');
+      }
+    }
+    */
 
     setState(() {
       _currentSession.messages.add(
@@ -202,15 +205,18 @@ class _ChatScreenState extends State<ChatScreen> {
       _statusMessage = 'Tiny가 요청 내용을 분석하고 있어요...';
       _statusImagePath = 'assets/images/tiny6.png';
     });
+
     _scrollToBottom();
 
     await Future.delayed(const Duration(seconds: 1));
 
     if (!mounted) return;
+
     setState(() {
       _statusMessage = '필요한 API와 예상 비용을 계산하고 있어요...';
       _statusImagePath = 'assets/images/tiny6.png';
     });
+
     _scrollToBottom();
 
     await Future.delayed(const Duration(seconds: 1));
@@ -220,6 +226,7 @@ class _ChatScreenState extends State<ChatScreen> {
     final totalCostWon = await _chatService.getTotalCostWon(text);
 
     if (!mounted) return;
+
     setState(() {
       _statusMessage = null;
       _statusImagePath = null;
@@ -230,32 +237,39 @@ class _ChatScreenState extends State<ChatScreen> {
 
       _currentSession.showCostCard = true;
     });
+
     _scrollToBottom();
 
     await Future.delayed(const Duration(seconds: 1));
 
     if (!mounted) return;
+
     setState(() {
       _statusMessage = '자동결제 후 결과를 생성하고 있어요...';
       _statusImagePath = 'assets/images/tiny6.png';
     });
+
     _scrollToBottom();
 
     await Future.delayed(const Duration(seconds: 1));
 
     if (!mounted) return;
+
     setState(() {
       _statusMessage = null;
       _statusImagePath = null;
       _currentSession.showResultCard = true;
     });
+
     _scrollToBottom();
   }
 
   Future<void> _startNewChat() async {
+    int? newSessionId;
+
     try {
-      final sessionId = await _chatService.createChatSession();
-      print('CREATE CHAT SESSION ID: $sessionId');
+      newSessionId = await _chatService.createChatSession();
+      print('CREATE CHAT SESSION ID: $newSessionId');
     } catch (e) {
       print('CREATE CHAT SESSION ERROR: $e');
     }
@@ -266,6 +280,7 @@ class _ChatScreenState extends State<ChatScreen> {
       _sessions.insert(
         0,
         ChatSessionModel(
+          sessionId: newSessionId,
           title: '새 채팅',
           subtitle: '무엇을 도와드릴까요?',
           date: '방금',
@@ -281,6 +296,7 @@ class _ChatScreenState extends State<ChatScreen> {
           showResultCard: false,
         ),
       );
+
       _selectedSessionIndex = 0;
       _statusMessage = null;
       _statusImagePath = null;
@@ -443,11 +459,6 @@ class _ChatScreenState extends State<ChatScreen> {
                     ),
                   ],
                 ),
-              ),
-              IconButton(
-                onPressed: _testRefreshToken,
-                icon: const Icon(Icons.notifications_none_rounded),
-                color: AppColors.textPrimary,
               ),
             ],
           ),

@@ -212,6 +212,29 @@ class MyPageService {
     );
   }
 
+  Future<void> updateUser({
+    required String nickname,
+  }) async {
+    print('UPDATE USER START');
+
+    final prefs = await SharedPreferences.getInstance();
+    final accessToken = prefs.getString('accessToken');
+
+    final response = await http.patch(
+      Uri.parse('$baseUrl/api/users/me'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $accessToken',
+      },
+      body: jsonEncode({
+        'nickname': nickname,
+      }),
+    );
+
+    print('UPDATE USER STATUS: ${response.statusCode}');
+    print('UPDATE USER BODY: ${response.body}');
+  }
+
   Map<String, dynamic> _decodeResponse(http.Response response) {
     if (response.body.isEmpty) {
       return {};
