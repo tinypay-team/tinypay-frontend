@@ -15,7 +15,7 @@ class UserModel {
     return UserModel(
       name: json['nickname'] ?? '',
       email: json['email'] ?? '',
-      avatar: json['profileImage'] ?? '',
+      avatar: json['profileImage'] ?? '김',
     );
   }
 

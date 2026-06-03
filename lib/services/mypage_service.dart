@@ -71,7 +71,7 @@ class MyPageService {
 
     if (response.statusCode == 200) {
       return UserModel.fromJson(
-        responseBody['data'],
+        responseBody['data']['user'],
       );
     }
 

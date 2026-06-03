@@ -166,13 +166,26 @@ Future<void> _goToChargeScreen() async {
         userName: user!.name,
         selectedAvatar: user!.avatar,
         avatarList: avatarList,
-        onSave: (newName, newAvatar) {
-          setState(() {
-            user = user!.copyWith(
-              name: newName,
-              avatar: newAvatar,
+        onSave: (newName, newAvatar) async {
+          try {
+            await _service.updateUser(
+              nickname: newName,
             );
-          });
+
+            final updatedUser = await _service.getUser();
+
+            if (!mounted) return;
+
+            setState(() {
+              user = updatedUser.copyWith(
+                avatar: newAvatar,
+              );
+            });
+
+            Navigator.pop(context);
+          } catch (e) {
+            print('UPDATE PROFILE ERROR: $e');
+          }
         },
       );
     },
@@ -264,6 +277,9 @@ Future<void> _goToChargeScreen() async {
   final userData = await _service.getUser();
   final budgetData = await _service.getBudget();
   final historyData = await _service.getPaymentHistory();
+
+  print('USER NAME: ${userData.name}');
+  print('USER EMAIL: ${userData.email}');
 
   setState(() {
     wallet = walletData;
