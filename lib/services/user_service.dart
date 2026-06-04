@@ -6,7 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_model.dart';
 
 class UserService {
-  static const String baseUrl = 'http://3.34.134.67:8080';
+  static const String baseUrl = 'http://54.116.124.181:8080';
 
   Future<UserModel> getMe() async {
     final prefs = await SharedPreferences.getInstance();

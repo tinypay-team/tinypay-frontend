@@ -1,5 +1,5 @@
 class ApiClient {
-  static const String baseUrl = 'http://3.34.134.67:8080';
+  static const String baseUrl = 'http://54.116.124.181:8080';
 
   Future<Map<String, dynamic>> get(String path) async {
     throw UnimplementedError('GET API 연결 예정: $path');

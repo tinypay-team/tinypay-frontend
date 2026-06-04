@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthService {
-  static const String baseUrl = 'http://3.34.134.67:8080';
+  static const String baseUrl = 'http://54.116.124.181:8080';
 
   Future<bool> loginWithGoogle(String idToken) async {
     print('LOGIN FUNCTION START');

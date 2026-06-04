@@ -276,7 +276,7 @@ Future<void> _goToChargeScreen() async {
   final walletData = await _service.getWallet();
   final userData = await _service.getUser();
   final budgetData = await _service.getBudget();
-  final historyData = await _service.getPaymentHistory();
+  final historyData = await _service.getPayments();
 
   print('USER NAME: ${userData.name}');
   print('USER EMAIL: ${userData.email}');

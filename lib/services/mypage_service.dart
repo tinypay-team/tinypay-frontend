@@ -12,7 +12,7 @@ import 'wallet_state.dart';
 import '../models/payment_detail_model.dart';
 
 class MyPageService {
-  static const String baseUrl = 'http://3.34.134.67:8080';
+  static const String baseUrl = 'http://54.116.124.181:8080';
 
   Future<Map<String, dynamic>> getMyPage() async {
     final prefs = await SharedPreferences.getInstance();
@@ -196,6 +196,9 @@ class MyPageService {
         'Authorization': 'Bearer $accessToken',
       },
     );
+
+    print('GET PAYMENTS STATUS: ${response.statusCode}');
+    print('GET PAYMENTS BODY: ${response.body}');
 
     final responseBody = _decodeResponse(response);
 

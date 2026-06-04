@@ -8,7 +8,7 @@ import '../models/request_status_model.dart';
 import '../models/chat_message_model.dart';
 
 class ChatService {
-  static const String baseUrl = 'http://3.34.134.67:8080';
+  static const String baseUrl = 'http://54.116.124.181:8080';
 
   Future<List<ApiCostModel>> getEstimatedApiCosts(String message) async {
     await Future.delayed(const Duration(milliseconds: 500));

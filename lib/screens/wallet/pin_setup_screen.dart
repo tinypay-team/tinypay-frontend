@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'wallet_created_screen.dart';
+import '../../services/wallet_api_service.dart';
 
 class PinSetupScreen extends StatefulWidget {
   const PinSetupScreen({super.key});
@@ -15,13 +16,13 @@ class _PinSetupScreenState extends State<PinSetupScreen> {
   bool isPinHidden = true;
   bool isConfirmPinHidden = true;
 
-  void completePinSetup() async {
+  Future<void> completePinSetup() async {
     final pin = pinController.text.trim();
     final confirmPin = confirmPinController.text.trim();
 
-    if (pin.length != 4 || confirmPin.length != 4) {
+    if (pin.length != 6 || confirmPin.length != 6) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('4자리 PIN을 입력해주세요.')),
+        const SnackBar(content: Text('6자리 PIN을 입력해주세요.')),
       );
       return;
     }
@@ -33,20 +34,34 @@ class _PinSetupScreenState extends State<PinSetupScreen> {
       return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('결제 PIN이 생성되었습니다.')),
-    );
+    try {
+      await WalletApiService().createWallet(
+        walletPassword: pin,
+      );
 
-    final result = await Navigator.push(
-  context,
-  MaterialPageRoute(
-    builder: (_) => const WalletCreatedScreen(),
-  ),
-);
+      if (!mounted) return;
 
-if (result == true) {
-  Navigator.pop(context, true);
-}
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('지갑이 생성되었습니다.')),
+      );
+
+      final result = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const WalletCreatedScreen(),
+        ),
+      );
+
+      if (result == true && mounted) {
+        Navigator.pop(context, true);
+      }
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('지갑 생성 실패: $e')),
+      );
+    }
   }
 
   @override
@@ -100,9 +115,9 @@ if (result == true) {
               controller: pinController,
               keyboardType: TextInputType.number,
               obscureText: isPinHidden,
-              maxLength: 4,
+              maxLength: 6,
               decoration: InputDecoration(
-                hintText: '4자리 숫자',
+                hintText: '6자리 숫자',
                 counterText: '',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
@@ -136,7 +151,7 @@ if (result == true) {
               controller: confirmPinController,
               keyboardType: TextInputType.number,
               obscureText: isConfirmPinHidden,
-              maxLength: 4,
+              maxLength: 6,
               decoration: InputDecoration(
                 hintText: '다시 입력',
                 counterText: '',

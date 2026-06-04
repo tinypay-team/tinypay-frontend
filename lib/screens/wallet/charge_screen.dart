@@ -35,7 +35,7 @@ class _ChargeScreenState extends State<ChargeScreen> {
 
     if (pin.length != 4) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('4자리 PIN을 입력해주세요.')),
+        const SnackBar(content: Text('6자리 PIN을 입력해주세요.')),
       );
       return;
     }
@@ -138,9 +138,9 @@ class _ChargeScreenState extends State<ChargeScreen> {
               controller: pinController,
               keyboardType: TextInputType.number,
               obscureText: true,
-              maxLength: 4,
+              maxLength: 6,
               decoration: InputDecoration(
-                hintText: '4자리 PIN',
+                hintText: '6자리 PIN',
                 counterText: '',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),

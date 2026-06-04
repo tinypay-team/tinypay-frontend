@@ -13,7 +13,6 @@ import '../widgets/chat/chat_input_area.dart';
 import '../widgets/chat/chat_drawer.dart';
 import '../widgets/chat/tiny_status_card.dart';
 import '../services/chat_service.dart';
-import '../services/auth_service.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
