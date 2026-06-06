@@ -26,6 +26,7 @@ import '../widgets/mypage/ai_service_usage_item.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'login_screen.dart';
 import '../services/auth_service.dart';
+import '../services/wallet_api_service.dart';
 
 class MyPageScreen extends StatefulWidget {
   const MyPageScreen({super.key});
@@ -218,10 +219,18 @@ Future<void> _goToChargeScreen() async {
       return BudgetDialog(
         monthlyBudget: budget!.monthlyBudget,
         monthlySpent: budget!.monthlySpent,
-        onSave: (newBudget) {
-          setState(() {
-            budget = budget!.copyWith(monthlyBudget: newBudget);
-          });
+        onSave: (newBudget) async {
+          try {
+            final savedBudget = await _service.updateMonthlyBudget(newBudget);
+
+            if (!mounted) return;
+
+            setState(() {
+              budget = budget!.copyWith(monthlyBudget: savedBudget);
+            });
+          } catch (e) {
+            print('UPDATE MONTHLY BUDGET ERROR: $e');
+          }
         },
       );
     },
@@ -236,10 +245,18 @@ Future<void> _goToChargeScreen() async {
     builder: (context) {
       return LimitDialog(
         singleLimit: budget!.singleLimit,
-        onSave: (newLimit) {
-          setState(() {
-            budget = budget!.copyWith(singleLimit: newLimit);
-          });
+        onSave: (newLimit) async {
+          try {
+            final savedLimit = await _service.updatePerPaymentLimit(newLimit);
+
+            if (!mounted) return;
+
+            setState(() {
+              budget = budget!.copyWith(singleLimit: savedLimit);
+            });
+          } catch (e) {
+            print('UPDATE PER PAYMENT LIMIT ERROR: $e');
+          }
         },
       );
     },
@@ -258,6 +275,208 @@ Future<void> _goToChargeScreen() async {
     },
   );
 }
+  Future<void> _toggleAutoPayment() async {
+    final nextValue = !autoPaymentEnabled;
+
+    try {
+      String? pin;
+
+      if (nextValue == true) {
+        pin = await _showPinDialog();
+
+        if (pin == null || pin.length != 6) return;
+      }
+
+      final savedValue = await WalletApiService().updateAutoPayment(
+        enabled: nextValue,
+        walletPassword: pin,
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        autoPaymentEnabled = savedValue;
+        wallet = wallet?.copyWith(
+          autoPaymentEnabled: savedValue,
+        );
+      });
+    } catch (e) {
+      print('UPDATE AUTO PAYMENT ERROR: $e');
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString())),
+      );
+    }
+  }
+
+  Future<String?> _showPinDialog() async {
+    final pinController = TextEditingController();
+
+    return showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(22, 24, 22, 20),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFAF7FF),
+              borderRadius: BorderRadius.circular(30),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x22000000),
+                  blurRadius: 24,
+                  offset: Offset(0, 10),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Image.asset(
+                  'assets/images/tinypay1.png',
+                  width: 92,
+                  height: 92,
+                ),
+
+                const SizedBox(height: 12),
+
+                const Text(
+                  '자동결제 활성화',
+                  style: TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+
+                const SizedBox(height: 8),
+
+                const Text(
+                  '자동결제를 켜려면\n6자리 결제 PIN을 입력해주세요.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    height: 1.45,
+                  ),
+                ),
+
+                const SizedBox(height: 24),
+
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: TextField(
+                    controller: pinController,
+                    keyboardType: TextInputType.number,
+                    obscureText: true,
+                    maxLength: 6,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 24,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 6,
+                    ),
+                    decoration: const InputDecoration(
+                      hintText: '••••••',
+                      counterText: '',
+                      border: InputBorder.none,
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 22),
+
+                Row(
+                  children: [
+                    Expanded(
+                      child: SizedBox(
+                        height: 52,
+                        child: OutlinedButton(
+                          onPressed: () {
+                            Navigator.pop(dialogContext);
+                          },
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.textSecondary,
+                            side: const BorderSide(
+                              color: AppColors.border,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
+                          child: const Text(
+                            '취소',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(width: 12),
+
+                    Expanded(
+                      child: SizedBox(
+                        height: 52,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            final pin = pinController.text.trim();
+
+                            if (pin.length != 6) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('6자리 PIN을 입력해주세요.'),
+                                ),
+                              );
+                              return;
+                            }
+
+                            Navigator.pop(dialogContext, pin);
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
+                          child: const Text(
+                            '확인',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
 
   @override
   void initState() {
@@ -273,20 +492,36 @@ Future<void> _goToChargeScreen() async {
 }
 
   Future<void> _loadMyPageData() async {
-  final walletData = await _service.getWallet();
-  final userData = await _service.getUser();
-  final budgetData = await _service.getBudget();
-  final historyData = await _service.getPayments();
+  try {
+    final userData = await _service.getUser();
+    final myPageData = await _service.getMyPage();
 
-  print('USER NAME: ${userData.name}');
-  print('USER EMAIL: ${userData.email}');
+    final walletData = WalletModel(
+      balance: (myPageData['balance'] as num?)?.toDouble() ?? 0,
+      walletAddress: wallet?.walletAddress ?? '',
+      isConnected: wallet?.isConnected ?? false,
+      walletStatus: wallet?.walletStatus ?? '',
+      autoPaymentEnabled: wallet?.autoPaymentEnabled ?? false,
+    );
 
-  setState(() {
-    wallet = walletData;
-    user = userData;
-    budget = budgetData;
-    paymentHistory = historyData;
-  });
+    final budgetData = BudgetModel.fromMyPageJson(myPageData);
+
+    final recentPayments =
+        (myPageData['recentPayments'] as List? ?? [])
+            .map((e) => PaymentModel.fromJson(e))
+            .toList();
+
+    if (!mounted) return;
+
+    setState(() {
+      wallet = walletData;
+      user = userData;
+      budget = budgetData;
+      paymentHistory = recentPayments;
+    });
+  } catch (e) {
+    print('LOAD MYPAGE ERROR: $e');
+  }
 }
 
   @override
@@ -345,11 +580,7 @@ Future<void> _goToChargeScreen() async {
             const SizedBox(height: 18),
             AutoPaymentCard(
               enabled: autoPaymentEnabled,
-              onToggle: () {
-                setState(() {
-                  autoPaymentEnabled = !autoPaymentEnabled;
-                });
-              },
+              onToggle: _toggleAutoPayment,
             ),
             const SizedBox(height: 18),
             BudgetCard(

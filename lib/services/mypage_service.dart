@@ -30,6 +30,9 @@ class MyPageService {
       },
     );
 
+    print('GET MYPAGE STATUS: ${response.statusCode}');
+    print('GET MYPAGE BODY: ${response.body}');
+
     final responseBody = _decodeResponse(response);
 
     if (response.statusCode == 200) {
@@ -42,7 +45,17 @@ class MyPageService {
   }
 
   Future<WalletModel> getWallet() async {
-    await Future.delayed(const Duration(milliseconds: 300));
+    final prefs = await SharedPreferences.getInstance();
+    final walletId = prefs.getInt('walletId');
+
+    if (walletId != null) {
+      return WalletState.wallet.copyWith(
+        walletId: walletId,
+        isConnected: true,
+        walletStatus: 'ACTIVE',
+      );
+    }
+
     return WalletState.wallet;
   }
 
@@ -139,6 +152,9 @@ class MyPageService {
         'perPaymentLimit': perPaymentLimit,
       }),
     );
+
+    print('UPDATE LIMIT STATUS: ${response.statusCode}');
+    print('UPDATE LIMIT BODY: ${response.body}');
 
     final responseBody = _decodeResponse(response);
 

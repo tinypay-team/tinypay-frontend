@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
 import '../../services/wallet_state.dart';
-import '../main_navigation_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class WalletCreatedScreen extends StatelessWidget {
   const WalletCreatedScreen({super.key});
@@ -10,7 +11,9 @@ class WalletCreatedScreen extends StatelessWidget {
 
   void copyWalletAddress(BuildContext context) {
     Clipboard.setData(
-      const ClipboardData(text: '0x12A4B7C9D2E5F8A1B3C6D9E0F2A4B6C8D0E1F3D'),
+      const ClipboardData(
+        text: '0x12A4B7C9D2E5F8A1B3C6D9E0F2A4B6C8D0E1F3D',
+      ),
     );
 
     ScaffoldMessenger.of(context).showSnackBar(
@@ -20,11 +23,16 @@ class WalletCreatedScreen extends StatelessWidget {
     );
   }
 
-  void goBackToMyPage(BuildContext context) {
-  WalletState.connectWallet();
+  Future<void> goBackToMyPage(BuildContext context) async {
+    final prefs = await SharedPreferences.getInstance();
+    final walletId = prefs.getInt('walletId');
 
-  Navigator.pop(context, true);
-}
+    if (walletId != null) {
+      await WalletState.connectWallet(walletId: walletId);
+    }
+
+    Navigator.pop(context, true);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -42,11 +50,11 @@ class WalletCreatedScreen extends StatelessWidget {
             const Spacer(),
 
             Image.asset(
-  'assets/images/tinypay2.png',
-  width: 210,
-  height: 210,
-  fit: BoxFit.contain,
-),
+              'assets/images/tinypay2.png',
+              width: 210,
+              height: 210,
+              fit: BoxFit.contain,
+            ),
 
             const SizedBox(height: 28),
 
@@ -120,10 +128,7 @@ class WalletCreatedScreen extends StatelessWidget {
               width: double.infinity,
               height: 54,
               child: ElevatedButton(
-                onPressed: () {
-                  WalletState.connectWallet();
-                  Navigator.pop(context, true);
-                },
+                onPressed: () => goBackToMyPage(context),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF5B5CF6),
                   foregroundColor: Colors.white,

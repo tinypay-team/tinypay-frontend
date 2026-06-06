@@ -34,28 +34,30 @@ class _PinSetupScreenState extends State<PinSetupScreen> {
       return;
     }
 
-    try {
-      await WalletApiService().createWallet(
-        walletPassword: pin,
-      );
+   try {
+    final walletId = await WalletApiService().createWallet(
+      walletPassword: pin,
+    );
 
-      if (!mounted) return;
+    print('CREATED WALLET ID: $walletId');
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('지갑이 생성되었습니다.')),
-      );
+    if (!mounted) return;
 
-      final result = await Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => const WalletCreatedScreen(),
-        ),
-      );
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('지갑이 생성되었습니다.')),
+    );
 
-      if (result == true && mounted) {
-        Navigator.pop(context, true);
-      }
-    } catch (e) {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const WalletCreatedScreen(),
+      ),
+    );
+
+    if (result == true && mounted) {
+      Navigator.pop(context, true);
+    }
+  } catch (e) {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(

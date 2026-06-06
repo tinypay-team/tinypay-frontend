@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../services/wallet_api_service.dart';
 
 class ChargeScreen extends StatefulWidget {
   const ChargeScreen({super.key});
@@ -33,7 +34,7 @@ class _ChargeScreenState extends State<ChargeScreen> {
       return;
     }
 
-    if (pin.length != 4) {
+    if (pin.length != 6) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('6자리 PIN을 입력해주세요.')),
       );
@@ -46,17 +47,39 @@ class _ChargeScreenState extends State<ChargeScreen> {
 
     await Future.delayed(const Duration(seconds: 2));
 
-    if (!mounted) return;
+    try {
+      final newBalance =
+          await WalletApiService().topUp(
+        amount: amount,
+        walletPassword: pin,
+      );
 
-    setState(() {
-      isCharging = false;
-    });
+      if (!mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('충전이 완료되었습니다.')),
-    );
+      setState(() {
+        isCharging = false;
+      });
 
-    Navigator.pop(context, amount);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            '충전 완료! 현재 잔액: $newBalance USDC',
+          ),
+        ),
+      );
+
+      Navigator.pop(context, newBalance);
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        isCharging = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString())),
+      );
+    }
   }
 
   @override

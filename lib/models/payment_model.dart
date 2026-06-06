@@ -14,14 +14,15 @@ class PaymentModel {
   });
 
   factory PaymentModel.fromJson(Map<String, dynamic> json) {
-    final paidAmount = (json['paidAmount'] as num).toDouble();
+  final paidAmount =
+      (json['paidAmount'] as num?)?.toDouble() ?? 0;
 
-    return PaymentModel(
-      paymentId: json['paymentId'],
-      title: json['serviceName'] ?? '',
-      time: json['executedAt'] ?? '',
-      amount: '$paidAmount USDC',
-      paymentStatus: json['paymentStatus'],
-    );
-  }
+  return PaymentModel(
+    paymentId: json['paymentId'],
+    title: json['serviceName'] ?? '',
+    time: json['executedAt'] ?? '',
+    amount: '$paidAmount USDC',
+    paymentStatus: json['paymentStatus'],
+  );
+}
 }

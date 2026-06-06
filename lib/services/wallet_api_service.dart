@@ -42,7 +42,7 @@ class WalletApiService {
     );
   }
 
-  Future<bool> createWallet({
+  Future<int> createWallet({
     required String walletPassword,
   }) async {
     print('CREATE WALLET START');
@@ -55,7 +55,7 @@ class WalletApiService {
     }
 
     final response = await http.post(
-      Uri.parse('$baseUrl/api/wallet'),
+      Uri.parse('$baseUrl/api/wallets'),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $accessToken',
@@ -70,12 +70,116 @@ class WalletApiService {
 
     final responseBody = _decodeResponse(response);
 
-    if (response.statusCode == 201) {
-      return true;
+    if (response.statusCode == 201 || response.statusCode == 200) {
+      final walletId = responseBody['data']['walletId'];
+
+      await prefs.setInt('walletId', walletId);
+
+      print('SAVED WALLET ID: $walletId');
+
+      return walletId;
     }
 
     throw Exception(
       responseBody['message'] ?? '지갑 생성에 실패했습니다.',
+    );
+  }
+
+  Future<double> topUp({
+    required double amount,
+    required String walletPassword,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+
+    final accessToken = prefs.getString('accessToken');
+    final walletId = prefs.getInt('walletId');
+
+    if (accessToken == null || accessToken.isEmpty) {
+      throw Exception('accessToken이 없습니다.');
+    }
+
+    if (walletId == null) {
+      throw Exception('walletId가 없습니다.');
+    }
+
+    final body = {
+      'amount': amount,
+      'walletPassword': walletPassword,
+    };
+
+    print('TOP UP START');
+    print('WALLET ID: $walletId');
+    print('TOP UP URL: $baseUrl/api/wallets/$walletId/top-up');
+    print('TOP UP REQUEST BODY: $body');
+
+    final response = await http.post(
+      Uri.parse('$baseUrl/api/wallets/$walletId/top-up'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $accessToken',
+      },
+      body: jsonEncode(body),
+    );
+
+    print('TOP UP STATUS: ${response.statusCode}');
+    print('TOP UP BODY: ${response.body}');
+
+    final responseBody = _decodeResponse(response);
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return (responseBody['data']['balance'] as num).toDouble();
+    }
+
+    throw Exception(
+      responseBody['message'] ?? '충전에 실패했습니다.',
+    );
+  }
+
+  Future<bool> updateAutoPayment({
+    required bool enabled,
+    String? walletPassword,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+
+    final accessToken = prefs.getString('accessToken');
+    final walletId = prefs.getInt('walletId');
+
+    if (accessToken == null || accessToken.isEmpty) {
+      throw Exception('accessToken이 없습니다.');
+    }
+
+    if (walletId == null) {
+      throw Exception('walletId가 없습니다.');
+    }
+
+    final body = {
+      'enabled': enabled,
+      if (walletPassword != null) 'walletPassword': walletPassword,
+    };
+
+    print('UPDATE AUTO PAYMENT START');
+    print('AUTO PAYMENT BODY: $body');
+
+    final response = await http.patch(
+      Uri.parse('$baseUrl/api/wallets/$walletId/auto-payment'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $accessToken',
+      },
+      body: jsonEncode(body),
+    );
+
+    print('UPDATE AUTO PAYMENT STATUS: ${response.statusCode}');
+    print('UPDATE AUTO PAYMENT BODY: ${response.body}');
+
+    final responseBody = _decodeResponse(response);
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return responseBody['data']['autoPaymentEnabled'] ?? enabled;
+    }
+
+    throw Exception(
+      responseBody['message'] ?? '자동결제 설정 변경 실패',
     );
   }
 

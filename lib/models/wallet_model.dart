@@ -1,4 +1,5 @@
 class WalletModel {
+  final int? walletId;
   final double balance;
   final String walletAddress;
   final bool isConnected;
@@ -6,6 +7,7 @@ class WalletModel {
   final bool autoPaymentEnabled;
 
   const WalletModel({
+    this.walletId,
     required this.balance,
     required this.walletAddress,
     required this.isConnected,
@@ -15,6 +17,7 @@ class WalletModel {
 
   factory WalletModel.fromJson(Map<String, dynamic> json) {
     return WalletModel(
+      walletId: json['walletId'],
       walletAddress: json['walletAddress'] ?? '',
       balance: (json['balance'] as num?)?.toDouble() ?? 0,
       walletStatus: json['walletStatus'] ?? '',
@@ -24,6 +27,7 @@ class WalletModel {
   }
 
   WalletModel copyWith({
+    int? walletId,
     double? balance,
     String? walletAddress,
     bool? isConnected,
@@ -31,6 +35,7 @@ class WalletModel {
     bool? autoPaymentEnabled,
   }) {
     return WalletModel(
+      walletId: walletId ?? this.walletId,
       balance: balance ?? this.balance,
       walletAddress: walletAddress ?? this.walletAddress,
       isConnected: isConnected ?? this.isConnected,
