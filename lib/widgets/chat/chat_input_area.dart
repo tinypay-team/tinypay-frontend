@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
 
 import '../../theme/app_colors.dart';
-import '../../services/file_service.dart';
 
 class ChatInputArea extends StatelessWidget {
   final TextEditingController controller;
   final VoidCallback onSend;
+  final VoidCallback onAttachFile;
 
   const ChatInputArea({
     super.key,
     required this.controller,
     required this.onSend,
+    required this.onAttachFile,
   });
 
   @override
@@ -51,19 +52,7 @@ class ChatInputArea extends StatelessWidget {
                 ),
                 child: IconButton(
                   padding: EdgeInsets.zero,
-                  onPressed: () async {
-                    try {
-                      final result = await FileService().getUploadUrl(
-                        fileName: 'test.png',
-                        fileType: 'image/png',
-                        fileSize: 1024,
-                      );
-
-                      print('UPLOAD URL RESULT: $result');
-                    } catch (e) {
-                      print('UPLOAD URL ERROR: $e');
-                    }
-                  },
+                  onPressed: onAttachFile,
                   icon: const Icon(
                     Icons.add_rounded,
                     color: AppColors.primary,

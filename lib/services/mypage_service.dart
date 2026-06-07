@@ -106,6 +106,10 @@ class MyPageService {
   Future<PaymentDetailModel> getPaymentDetail(
     int paymentId,
   ) async {
+
+    print('GET PAYMENT DETAIL START');
+    print('PAYMENT ID: $paymentId');
+
     final prefs = await SharedPreferences.getInstance();
     final accessToken = prefs.getString('accessToken');
 
@@ -122,6 +126,9 @@ class MyPageService {
     );
 
     final responseBody = _decodeResponse(response);
+
+    print('GET PAYMENT DETAIL STATUS: ${response.statusCode}');
+    print('GET PAYMENT DETAIL BODY: ${response.body}');
 
     if (response.statusCode == 200) {
       return PaymentDetailModel.fromJson(

@@ -27,6 +27,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'login_screen.dart';
 import '../services/auth_service.dart';
 import '../services/wallet_api_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 
 class MyPageScreen extends StatefulWidget {
   const MyPageScreen({super.key});
@@ -292,6 +294,9 @@ Future<void> _goToChargeScreen() async {
         walletPassword: pin,
       );
 
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('autoPaymentEnabled', savedValue);
+
       if (!mounted) return;
 
       setState(() {
@@ -492,37 +497,43 @@ Future<void> _goToChargeScreen() async {
 }
 
   Future<void> _loadMyPageData() async {
-  try {
-    final userData = await _service.getUser();
-    final myPageData = await _service.getMyPage();
+    try {
+      final userData = await _service.getUser();
+      final myPageData = await _service.getMyPage();
 
-    final walletData = WalletModel(
-      balance: (myPageData['balance'] as num?)?.toDouble() ?? 0,
-      walletAddress: wallet?.walletAddress ?? '',
-      isConnected: wallet?.isConnected ?? false,
-      walletStatus: wallet?.walletStatus ?? '',
-      autoPaymentEnabled: wallet?.autoPaymentEnabled ?? false,
-    );
+      final walletApiData = await WalletApiService().getWallet();
 
-    final budgetData = BudgetModel.fromMyPageJson(myPageData);
+      final prefs = await SharedPreferences.getInstance();
+      final savedAutoPaymentEnabled =
+          prefs.getBool('autoPaymentEnabled') ??
+              walletApiData.autoPaymentEnabled;
 
-    final recentPayments =
-        (myPageData['recentPayments'] as List? ?? [])
-            .map((e) => PaymentModel.fromJson(e))
-            .toList();
+      final walletData = walletApiData.copyWith(
+        balance: (myPageData['balance'] as num?)?.toDouble() ??
+            walletApiData.balance,
+        autoPaymentEnabled: savedAutoPaymentEnabled,
+      );
 
-    if (!mounted) return;
+      final budgetData = BudgetModel.fromMyPageJson(myPageData);
 
-    setState(() {
-      wallet = walletData;
-      user = userData;
-      budget = budgetData;
-      paymentHistory = recentPayments;
-    });
-  } catch (e) {
-    print('LOAD MYPAGE ERROR: $e');
+      final recentPayments =
+          (myPageData['recentPayments'] as List? ?? [])
+              .map((e) => PaymentModel.fromJson(e))
+              .toList();
+
+      if (!mounted) return;
+
+      setState(() {
+        wallet = walletData;
+        user = userData;
+        budget = budgetData;
+        paymentHistory = recentPayments;
+        autoPaymentEnabled = walletData.autoPaymentEnabled;
+      });
+    } catch (e) {
+      print('LOAD MYPAGE ERROR: $e');
+    }
   }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -630,45 +641,32 @@ Container(
     borderRadius: BorderRadius.circular(28),
     border: Border.all(color: AppColors.border),
   ),
-  child: const Column(
-    children: [
-      AiServiceUsageItem(
-        icon: Icons.video_collection_rounded,
-        title: '릴스 분석 요청',
-        time: '오늘 15:42',
-        amount: '0.006 USDC',
-        iconBackground: Color(0xFFFFEAF3),
-        iconColor: Color(0xFFE84393),
-      ),
-
-      AiServiceUsageItem(
-        icon: Icons.image_rounded,
-        title: '이미지 생성',
-        time: '오늘 14:17',
-        amount: '0.009 USDC',
-        iconBackground: Color(0xFFEAF0FF),
-        iconColor: AppColors.primary,
-      ),
-
-      AiServiceUsageItem(
-        icon: Icons.bar_chart_rounded,
-        title: '데이터 분석 요청',
-        time: '오늘 11:03',
-        amount: '0.005 USDC',
-        iconBackground: Color(0xFFEFF8FF),
-        iconColor: Color(0xFF3B82F6),
-      ),
-
-      AiServiceUsageItem(
-        icon: Icons.mic_rounded,
-        title: 'AI 음성 생성',
-        time: '어제 21:30',
-        amount: '0.003 USDC',
-        iconBackground: Color(0xFFF3F0FF),
-        iconColor: Color(0xFF7C3AED),
-      ),
-    ],
-  ),
+  child: paymentHistory.isEmpty
+      ? const Padding(
+          padding: EdgeInsets.symmetric(vertical: 34),
+          child: Center(
+            child: Text(
+              '아직 결제 내역이 없습니다.',
+              style: TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        )
+      : Column(
+          children: paymentHistory.take(4).map((item) {
+            return AiServiceUsageItem(
+              icon: Icons.auto_awesome_rounded,
+              title: item.title,
+              time: item.time,
+              amount: item.amount,
+              iconBackground: const Color(0xFFEAF0FF),
+              iconColor: AppColors.primary,
+            );
+          }).toList(),
+        ),
 ),
 
 const SizedBox(height: 22),

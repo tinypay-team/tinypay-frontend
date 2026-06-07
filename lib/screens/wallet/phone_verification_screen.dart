@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+
+import '../../services/verification_service.dart';
 import 'pin_setup_screen.dart';
 
 class PhoneVerificationScreen extends StatefulWidget {
@@ -11,18 +13,17 @@ class PhoneVerificationScreen extends StatefulWidget {
       _PhoneVerificationScreenState();
 }
 
-class _PhoneVerificationScreenState
-    extends State<PhoneVerificationScreen> {
-  final TextEditingController phoneController =
-      TextEditingController();
+class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
+  final TextEditingController phoneController = TextEditingController();
+  final TextEditingController codeController = TextEditingController();
 
-  final TextEditingController codeController =
-      TextEditingController();
+  final VerificationService _verificationService = VerificationService();
 
   bool codeSent = false;
+  bool isSendingCode = false;
+  bool isVerifying = false;
 
   int remainingTime = 300;
-
   Timer? timer;
 
   void startTimer() {
@@ -53,44 +54,104 @@ class _PhoneVerificationScreenState
     return '$minutes:${remainSeconds.toString().padLeft(2, '0')}';
   }
 
-  void sendCode() {
-    setState(() {
-      codeSent = true;
-    });
+  Future<void> sendCode() async {
+    final phoneNumber = phoneController.text.trim();
 
-    startTimer();
+    if (phoneNumber.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('휴대폰 번호를 입력해주세요.')),
+      );
+      return;
+    }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('테스트 인증번호: 123456'),
-      ),
-    );
+    try {
+      setState(() {
+        isSendingCode = true;
+      });
+
+      await _verificationService.sendVerificationCode(
+        phoneNumber: phoneNumber,
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        codeSent = true;
+      });
+
+      startTimer();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('인증번호가 발송되었습니다.')),
+      );
+    } catch (e) {
+      print('SEND CODE ERROR: $e');
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString())),
+      );
+    } finally {
+      if (!mounted) return;
+
+      setState(() {
+        isSendingCode = false;
+      });
+    }
   }
 
-  void verifyCode() async {
-    if (codeController.text == '123456') {
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(
-      content: Text('인증 성공'),
-    ),
-  );
+  Future<void> verifyCode() async {
+    final phoneNumber = phoneController.text.trim();
+    final verificationCode = codeController.text.trim();
 
-  final result = await Navigator.push(
-  context,
-  MaterialPageRoute(
-    builder: (_) => const PinSetupScreen(),
-  ),
-);
-
-if (result == true) {
-  Navigator.pop(context, true);
-}
-} else {
+    if (verificationCode.length != 6) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('인증번호가 올바르지 않습니다'),
+        const SnackBar(content: Text('6자리 인증번호를 입력해주세요.')),
+      );
+      return;
+    }
+
+    try {
+      setState(() {
+        isVerifying = true;
+      });
+
+      await _verificationService.verifyCode(
+        phoneNumber: phoneNumber,
+        verificationCode: verificationCode,
+      );
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('인증 성공')),
+      );
+
+      final result = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const PinSetupScreen(),
         ),
       );
+
+      if (result == true && mounted) {
+        Navigator.pop(context, true);
+      }
+    } catch (e) {
+      print('VERIFY CODE ERROR: $e');
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString())),
+      );
+    } finally {
+      if (!mounted) return;
+
+      setState(() {
+        isVerifying = false;
+      });
     }
   }
 
@@ -107,8 +168,11 @@ if (result == true) {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFFAF7FF),
       appBar: AppBar(
         title: const Text('본인인증'),
+        backgroundColor: const Color(0xFFFAF7FF),
+        elevation: 0,
       ),
       body: Padding(
         padding: const EdgeInsets.all(24),
@@ -142,8 +206,17 @@ if (result == true) {
               width: double.infinity,
               height: 52,
               child: ElevatedButton(
-                onPressed: sendCode,
-                child: const Text('인증번호 받기'),
+                onPressed: isSendingCode ? null : sendCode,
+                child: isSendingCode
+                    ? const SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.5,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text('인증번호 받기'),
               ),
             ),
 
@@ -176,8 +249,7 @@ if (result == true) {
               const SizedBox(height: 12),
 
               Row(
-                mainAxisAlignment:
-                    MainAxisAlignment.spaceBetween,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
                     '남은 시간 ${formatTime(remainingTime)}',
@@ -188,7 +260,7 @@ if (result == true) {
                   ),
 
                   TextButton(
-                    onPressed: sendCode,
+                    onPressed: isSendingCode ? null : sendCode,
                     child: const Text('재발송'),
                   ),
                 ],
@@ -200,8 +272,17 @@ if (result == true) {
                 width: double.infinity,
                 height: 52,
                 child: ElevatedButton(
-                  onPressed: verifyCode,
-                  child: const Text('인증 완료'),
+                  onPressed: isVerifying ? null : verifyCode,
+                  child: isVerifying
+                      ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.5,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text('인증 완료'),
                 ),
               ),
             ],

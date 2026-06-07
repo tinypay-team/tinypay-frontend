@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../models/payment_model.dart';
 import '../../theme/app_colors.dart';
+import '../../services/mypage_service.dart';
+import '../../models/payment_detail_model.dart';
 
 class PaymentHistoryDialog extends StatelessWidget {
   final List<PaymentModel> paymentHistory;
@@ -11,13 +13,42 @@ class PaymentHistoryDialog extends StatelessWidget {
     required this.paymentHistory,
   });
 
-  void _showApiDetailSheet(BuildContext context, PaymentModel item) {
+  void _showApiDetailSheet(BuildContext context, PaymentModel item) async {
+    if (item.paymentId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('결제 ID가 없습니다.')),
+      );
+      return;
+    }
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) {
-        return _PaymentApiDetailSheet(payment: item);
+        return FutureBuilder(
+          future: MyPageService().getPaymentDetail(item.paymentId!),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(
+                child: CircularProgressIndicator(),
+              );
+            }
+
+            if (snapshot.hasError) {
+              return Container(
+                padding: const EdgeInsets.all(24),
+                color: Colors.white,
+                child: Text('상세 조회 실패: ${snapshot.error}'),
+              );
+            }
+
+            return _PaymentApiDetailSheet(
+              payment: item,
+              detail: snapshot.data!,
+            );
+          },
+        );
       },
     );
   }
@@ -348,30 +379,15 @@ class _HistoryUsageItem extends StatelessWidget {
 
 class _PaymentApiDetailSheet extends StatelessWidget {
   final PaymentModel payment;
+  final PaymentDetailModel detail;
 
   const _PaymentApiDetailSheet({
     required this.payment,
+    required this.detail,
   });
 
   @override
   Widget build(BuildContext context) {
-    const usedApis = [
-      {
-        'name': 'Instagram Reels API',
-        'description': '릴스 트렌드 및 영상 구조 분석',
-        'cost': '0.006 USDC',
-      },
-      {
-        'name': 'Video Analysis API',
-        'description': '영상 패턴, 길이, 후킹 포인트 분석',
-        'cost': '0.009 USDC',
-      },
-      {
-        'name': 'AI Voice Generator API',
-        'description': '추천 음성 및 배경음 생성 비용',
-        'cost': '0.005 USDC',
-      },
-    ];
 
     return Container(
       padding: const EdgeInsets.fromLTRB(22, 12, 22, 26),
@@ -446,7 +462,7 @@ class _PaymentApiDetailSheet extends StatelessWidget {
               border: Border.all(color: AppColors.border),
             ),
             child: Column(
-              children: usedApis.map((api) {
+              children: detail.apiUsages.map((api) {
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 16),
                   child: Row(
@@ -472,7 +488,7 @@ class _PaymentApiDetailSheet extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              api['name']!,
+                              api.apiName,
                               style: const TextStyle(
                                 color: AppColors.textPrimary,
                                 fontSize: 15,
@@ -480,9 +496,9 @@ class _PaymentApiDetailSheet extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(height: 4),
-                            Text(
-                              api['description']!,
-                              style: const TextStyle(
+                            const Text(
+                              '사용된 API 비용',
+                              style: TextStyle(
                                 color: AppColors.textSecondary,
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
@@ -496,7 +512,7 @@ class _PaymentApiDetailSheet extends StatelessWidget {
                       const SizedBox(width: 8),
 
                       Text(
-                        api['cost']!,
+                        '${api.cost.toStringAsFixed(3)} USDC',
                         style: const TextStyle(
                           color: AppColors.textPrimary,
                           fontSize: 13,
@@ -509,7 +525,6 @@ class _PaymentApiDetailSheet extends StatelessWidget {
               }).toList(),
             ),
           ),
-
           const SizedBox(height: 18),
 
           Container(

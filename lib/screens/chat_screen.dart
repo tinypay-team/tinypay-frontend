@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:io';
+import 'package:file_picker/file_picker.dart';
+import 'package:mime/mime.dart';
 
 import '../theme/app_colors.dart';
 import 'login_screen.dart';
@@ -13,6 +16,10 @@ import '../widgets/chat/chat_input_area.dart';
 import '../widgets/chat/chat_drawer.dart';
 import '../widgets/chat/tiny_status_card.dart';
 import '../services/chat_service.dart';
+import '../services/file_service.dart';
+import '../models/chat_message_model.dart';
+import 'chat/payment_approval_card.dart';
+import 'chat/wallet_password_dialog.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -26,6 +33,8 @@ class _ChatScreenState extends State<ChatScreen> {
   final ScrollController _scrollController = ScrollController();
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final ChatService _chatService = ChatService();
+  List<ChatMessageModel> serverMessages = [];
+  bool isLoadingMessages = false;
 
   final List<ChatSessionModel> _sessions = [
     ChatSessionModel(
@@ -48,6 +57,8 @@ class _ChatScreenState extends State<ChatScreen> {
   int _selectedSessionIndex = 0;
   String? _statusMessage;
   String? _statusImagePath;
+  int? attachedFileId;
+  String? attachedFileName;
 
   List<ApiCostModel> _apiCosts = [];
   String _totalCostUsdc = '0.00 USDC';
@@ -59,6 +70,164 @@ class _ChatScreenState extends State<ChatScreen> {
   void initState() {
     super.initState();
     _loadSessions();
+  }
+
+  Future<void> _refreshMessages() async {
+    final sessionId = _currentSession.sessionId;
+
+    if (sessionId == null) {
+      setState(() {
+        serverMessages = [];
+      });
+      return;
+    }
+
+    try {
+      setState(() {
+        isLoadingMessages = true;
+      });
+
+      final result = await _chatService.getMessages(
+        sessionId: sessionId,
+      );
+
+      final messages = result
+          .map((e) => ChatMessageModel.fromJson(e as Map<String, dynamic>))
+          .toList();
+
+      if (!mounted) return;
+
+      setState(() {
+        serverMessages = messages;
+        isLoadingMessages = false;
+      });
+
+      _scrollToBottom();
+    } catch (e) {
+      print('REFRESH MESSAGES ERROR: $e');
+
+      if (!mounted) return;
+
+      setState(() {
+        isLoadingMessages = false;
+      });
+    }
+  }
+
+  Widget _buildServerMessage(ChatMessageModel message) {
+    if (message.isWaitingApproval || message.isCancelled) {
+      return PaymentApprovalCard(
+        message: message,
+        disabled: message.isCancelled,
+        onApprove: () => _handleApprovePayment(message),
+        onCancel: () => _handleCancelPayment(message),
+      );
+    }
+
+    return MessageBubble(
+      item: ChatItemModel(
+        isUser: message.isUser,
+        text: message.content.isEmpty ? '내용 없음' : message.content,
+        time: '',
+      ),
+    );
+  }
+
+  Future<void> _handleApprovePayment(ChatMessageModel message) async {
+    final requestId = message.requestId;
+    final estimatedCost = message.totalEstimatedCost ?? 0;
+
+    if (requestId == null) return;
+
+    try {
+      final checkResult = await _chatService.checkPayment(
+        estimatedCost: estimatedCost,
+      );
+
+      final autoPaymentEnabled =
+          checkResult['autoPaymentEnabled'] == true;
+      final exceedsPerPaymentLimit =
+          checkResult['exceedsPerPaymentLimit'] == true;
+
+      final needPassword =
+          !autoPaymentEnabled || exceedsPerPaymentLimit;
+
+      String? walletPassword;
+
+      if (needPassword) {
+        walletPassword = await showDialog<String>(
+          context: context,
+          builder: (_) => const WalletPasswordDialog(),
+        );
+
+        if (walletPassword == null || walletPassword.isEmpty) {
+          return;
+        }
+      }
+
+      setState(() {
+        _statusMessage = '결제를 진행하고 있어요...';
+        _statusImagePath = 'assets/images/tiny6.png';
+      });
+
+      await _chatService.approveRequest(
+        requestId: requestId,
+        estimatedCost: estimatedCost,
+        walletPassword: walletPassword,
+      );
+
+      await _pollRequestStatus(requestId: requestId);
+    } catch (e) {
+      print('APPROVE PAYMENT ERROR: $e');
+
+      if (!mounted) return;
+
+      setState(() {
+        _statusMessage = null;
+        _statusImagePath = null;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString())),
+      );
+    }
+  }
+
+  Future<void> _handleCancelPayment(ChatMessageModel message) async {
+    final requestId = message.requestId;
+
+    if (requestId == null) return;
+
+    try {
+      setState(() {
+        _statusMessage = '결제 요청을 취소하고 있어요...';
+        _statusImagePath = 'assets/images/tiny6.png';
+      });
+
+      await _chatService.cancelRequest(
+        requestId: requestId,
+      );
+
+      setState(() {
+        _statusMessage = null;
+        _statusImagePath = null;
+      });
+
+      await _refreshMessages();
+    } catch (e) {
+      print('CANCEL PAYMENT ERROR: $e');
+
+      if (!mounted) return;
+
+      setState(() {
+        _statusMessage = null;
+        _statusImagePath = null;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString())),
+      );
+    }
   }
 
   Future<void> _loadSessions() async {
@@ -105,8 +274,88 @@ class _ChatScreenState extends State<ChatScreen> {
 
         _selectedSessionIndex = 0;
       });
+      await _refreshMessages();
     } catch (e) {
       print('GET CHAT SESSIONS ERROR: $e');
+    }
+  }
+
+  Future<void> _attachFile() async {
+    try {
+      final result = await FilePicker.platform.pickFiles();
+
+      if (result == null || result.files.single.path == null) {
+        return;
+      }
+
+      final pickedFile = result.files.single;
+      final file = File(pickedFile.path!);
+
+      final fileName = pickedFile.name;
+      final fileSize = pickedFile.size;
+      final fileType =
+          lookupMimeType(file.path) ?? 'application/octet-stream';
+
+      final sessionId = _currentSession.sessionId;
+
+      if (sessionId == null) {
+        throw Exception('채팅 세션이 없습니다.');
+      }
+
+      print('PICKED FILE NAME: $fileName');
+      print('PICKED FILE SIZE: $fileSize');
+      print('PICKED FILE TYPE: $fileType');
+
+      final uploadData = await FileService().getUploadUrl(
+        fileName: fileName,
+        fileType: fileType,
+        fileSize: fileSize,
+        sessionId: sessionId,
+      );
+
+      final uploadUrl = uploadData['uploadUrl'];
+      final storageKey = uploadData['storageKey'];
+
+      await FileService().uploadFileToS3(
+        uploadUrl: uploadUrl,
+        file: file,
+        fileType: fileType,
+      );
+
+      final fileId = await FileService().confirmUpload(
+        fileName: fileName,
+        fileType: fileType,
+        fileSize: fileSize,
+        sessionId: sessionId,
+        storageKey: storageKey,
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        attachedFileId = fileId;
+        attachedFileName = fileName;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('파일 첨부 완료: $fileName')),
+      );
+
+      print('ATTACHED FILE ID: $fileId');
+      final downloadData = await FileService().getDownloadUrl(
+        fileId: fileId,
+      );
+
+      print('DOWNLOAD URL DATA: $downloadData');
+      print('DOWNLOAD URL: ${downloadData['downloadUrl']}');
+    } catch (e) {
+      print('ATTACH FILE ERROR: $e');
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString())),
+      );
     }
   }
 
@@ -147,120 +396,100 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> _sendMessage() async {
     final text = _controller.text.trim();
 
-    if (text.isEmpty) return;
+    if (text.isEmpty && attachedFileId == null) return;
 
     final sessionId = _currentSession.sessionId;
 
-    print('CURRENT SESSION ID: $sessionId');
-
-    // 메시지 전송 API 수정 예정
-    // API 확정 후 아래 코드 사용
-    /*
-    if (sessionId != null) {
-      try {
-        final result = await _chatService.sendMessage(
-          sessionId: sessionId,
-          content: text,
-        );
-
-        print('SEND MESSAGE RESULT: $result');
-
-        final requestId = result['requestId'];
-
-        print('REQUEST ID: $requestId');
-
-        if (requestId != null) {
-          final status = await _chatService.getRequestStatus(
-            requestId: requestId,
-          );
-
-          print(
-            'REQUEST STATUS RESULT: ${status.requestStatus}',
-          );
-        }
-      } catch (e) {
-        print('SEND MESSAGE ERROR: $e');
-      }
+    if (sessionId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('먼저 새 채팅을 생성해주세요.')),
+      );
+      return;
     }
-    */
 
-    setState(() {
-      _currentSession.messages.add(
-        ChatItemModel(
-          isUser: true,
-          text: text,
-          time: '오후 03:42',
-        ),
+    try {
+      setState(() {
+        _statusMessage = 'Tiny가 요청 내용을 분석하고 있어요...';
+        _statusImagePath = 'assets/images/tiny6.png';
+      });
+
+      final result = await _chatService.sendMessage(
+        sessionId: sessionId,
+        content: text,
+        fileId: attachedFileId,
       );
 
       _controller.clear();
-      _currentSession.showCostCard = false;
-      _currentSession.showResultCard = false;
-      _currentSession.subtitle = text;
-      _currentSession.title =
-          text.length > 12 ? '${text.substring(0, 12)}...' : text;
-      _currentSession.date = '방금';
 
-      _statusMessage = 'Tiny가 요청 내용을 분석하고 있어요...';
-      _statusImagePath = 'assets/images/tiny6.png';
-    });
+      setState(() {
+        attachedFileId = null;
+        attachedFileName = null;
+      });
 
-    _scrollToBottom();
+      final requestId = result['requestId'];
 
-    await Future.delayed(const Duration(seconds: 1));
+      if (requestId == null) {
+        await _refreshMessages();
+        return;
+      }
 
-    if (!mounted) return;
+      await _pollRequestStatus(requestId: requestId);
+    } catch (e) {
+      print('SEND MESSAGE ERROR: $e');
 
-    setState(() {
-      _statusMessage = '필요한 API와 예상 비용을 계산하고 있어요...';
-      _statusImagePath = 'assets/images/tiny6.png';
-    });
+      if (!mounted) return;
 
-    _scrollToBottom();
+      setState(() {
+        _statusMessage = null;
+        _statusImagePath = null;
+      });
 
-    await Future.delayed(const Duration(seconds: 1));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString())),
+      );
+    }
+  }
 
-    final apiCosts = await _chatService.getEstimatedApiCosts(text);
-    final totalCostUsdc = await _chatService.getTotalCostUsdc(text);
-    final totalCostWon = await _chatService.getTotalCostWon(text);
+  Future<void> _pollRequestStatus({
+    required int requestId,
+  }) async {
+    for (int i = 0; i < 30; i++) {
+      await Future.delayed(const Duration(seconds: 2));
 
-    if (!mounted) return;
+      if (!mounted) return;
+
+      final statusData = await _chatService.getRequestStatus(
+        requestId: requestId,
+      );
+
+      final requestStatus = statusData['requestStatus'];
+
+      print('POLLING STATUS: $requestStatus');
+
+      if (requestStatus == 'PENDING' ||
+          requestStatus == 'ANALYZING') {
+        setState(() {
+          _statusMessage = 'Tiny가 요청을 처리하고 있어요...';
+          _statusImagePath = 'assets/images/tiny6.png';
+        });
+        continue;
+      }
+
+      setState(() {
+        _statusMessage = null;
+        _statusImagePath = null;
+      });
+
+      await _refreshMessages();
+      return;
+    }
 
     setState(() {
       _statusMessage = null;
       _statusImagePath = null;
-
-      _apiCosts = apiCosts;
-      _totalCostUsdc = totalCostUsdc;
-      _totalCostWon = totalCostWon;
-
-      _currentSession.showCostCard = true;
     });
 
-    _scrollToBottom();
-
-    await Future.delayed(const Duration(seconds: 1));
-
-    if (!mounted) return;
-
-    setState(() {
-      _statusMessage = '자동결제 후 결과를 생성하고 있어요...';
-      _statusImagePath = 'assets/images/tiny6.png';
-    });
-
-    _scrollToBottom();
-
-    await Future.delayed(const Duration(seconds: 1));
-
-    if (!mounted) return;
-
-    setState(() {
-      _statusMessage = null;
-      _statusImagePath = null;
-      _currentSession.showResultCard = true;
-    });
-
-    _scrollToBottom();
+    await _refreshMessages();
   }
 
   Future<void> _startNewChat() async {
@@ -304,14 +533,16 @@ class _ChatScreenState extends State<ChatScreen> {
     Navigator.pop(context);
   }
 
-  void _selectSession(int index) {
+  Future<void> _selectSession(int index) async {
     setState(() {
       _selectedSessionIndex = index;
       _statusMessage = null;
       _statusImagePath = null;
     });
+
     Navigator.pop(context);
-    _scrollToBottom();
+
+    await _refreshMessages();
   }
 
   Future<void> _confirmDeleteSession(int index) async {
@@ -471,9 +702,29 @@ class _ChatScreenState extends State<ChatScreen> {
                 controller: _scrollController,
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
                 children: [
-                  ..._currentSession.messages.map(
-                    (item) => MessageBubble(item: item),
-                  ),
+                  if (isLoadingMessages)
+                    const Padding(
+                      padding: EdgeInsets.only(top: 24),
+                      child: Center(
+                        child: CircularProgressIndicator(),
+                      ),
+                    )
+                  else if (serverMessages.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.only(top: 24),
+                      child: Center(
+                        child: Text(
+                          '아직 대화가 없습니다.',
+                          style: TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    )
+                  else
+                    ...serverMessages.map(_buildServerMessage),
                   if (_statusMessage != null) ...[
                     const SizedBox(height: 12),
                     TinyStatusCard(
@@ -499,6 +750,7 @@ class _ChatScreenState extends State<ChatScreen> {
             ChatInputArea(
               controller: _controller,
               onSend: _sendMessage,
+              onAttachFile: _attachFile,
             ),
           ],
         ),
