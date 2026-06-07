@@ -8,6 +8,7 @@ class PaymentApprovalCard extends StatelessWidget {
   final bool disabled;
   final VoidCallback onApprove;
   final VoidCallback onCancel;
+  final bool completed;
 
   const PaymentApprovalCard({
     super.key,
@@ -15,6 +16,7 @@ class PaymentApprovalCard extends StatelessWidget {
     required this.disabled,
     required this.onApprove,
     required this.onCancel,
+    required this.completed,
   });
 
   @override
@@ -42,8 +44,12 @@ class PaymentApprovalCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              '결제가 필요한 요청이에요',
+            Text(
+              completed
+                  ? '결제가 완료되었어요'
+                  : disabled
+                      ? '취소된 결제 요청이에요'
+                      : '결제가 필요한 요청이에요',
               style: TextStyle(
                 color: AppColors.textPrimary,
                 fontSize: 17,
@@ -51,8 +57,12 @@ class PaymentApprovalCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 6),
-            const Text(
-              '아래 API 사용 내역과 예상 비용을 확인해주세요.',
+            Text(
+              completed
+                  ? '결제가 정상적으로 처리되어 결과를 생성했어요.'
+                  : disabled
+                      ? '이 요청은 취소되어 더 이상 결제할 수 없습니다.'
+                      : '아래 API 사용 내역과 예상 비용을 확인해주세요.',
               style: TextStyle(
                 color: AppColors.textSecondary,
                 fontSize: 13,
@@ -147,10 +157,50 @@ class PaymentApprovalCard extends StatelessWidget {
 
             const SizedBox(height: 18),
 
-            if (!disabled)
+            if (completed)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEFFAF3),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFCBEFD7)),
+                ),
+                child: const Center(
+                  child: Text(
+                    '완료됨',
+                    style: TextStyle(
+                      color: Color(0xFF24B85A),
+                      fontSize: 15,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+              )
+            else if (disabled)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF1F2F6),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: const Center(
+                  child: Text(
+                    '취소됨',
+                    style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+              )
+            else
               Row(
                 children: [
-                  Expanded(
+                  Expanded( 
                     child: OutlinedButton(
                       onPressed: onCancel,
                       style: OutlinedButton.styleFrom(

@@ -20,6 +20,8 @@ import '../services/file_service.dart';
 import '../models/chat_message_model.dart';
 import 'chat/payment_approval_card.dart';
 import 'chat/wallet_password_dialog.dart';
+import 'chat/generated_file_card.dart';
+import 'chat/payment_completed_card.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -33,8 +35,12 @@ class _ChatScreenState extends State<ChatScreen> {
   final ScrollController _scrollController = ScrollController();
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final ChatService _chatService = ChatService();
+  final Map<int, Map<String, dynamic>> _paymentResults = {};
   List<ChatMessageModel> serverMessages = [];
   bool isLoadingMessages = false;
+  bool isApprovingPayment = false;
+
+  
 
   final List<ChatSessionModel> _sessions = [
     ChatSessionModel(
@@ -119,27 +125,74 @@ class _ChatScreenState extends State<ChatScreen> {
       return PaymentApprovalCard(
         message: message,
         disabled: message.isCancelled,
+        completed: false,
         onApprove: () => _handleApprovePayment(message),
         onCancel: () => _handleCancelPayment(message),
       );
     }
 
-    return MessageBubble(
-      item: ChatItemModel(
-        isUser: message.isUser,
-        text: message.content.isEmpty ? '내용 없음' : message.content,
-        time: '',
-      ),
+    if (message.isAssistant &&
+        message.requestStatus == 'COMPLETED' &&
+        message.apiItems.isNotEmpty) {
+      final result = _paymentResults[message.requestId];
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          PaymentApprovalCard(
+            message: message,
+            disabled: false,
+            completed: true,
+            onApprove: () {},
+            onCancel: () {},
+          ),
+          if (result != null)
+            PaymentCompletedCard(
+              amount: result['amount'],
+              balance: result['balance'],
+            ),
+        ],
+      );
+    }
+
+    return Column(
+      crossAxisAlignment:
+          message.isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+      children: [
+        MessageBubble(
+          item: ChatItemModel(
+            isUser: message.isUser,
+            text: message.content.isEmpty ? '내용 없음' : message.content,
+            time: '',
+          ),
+        ),
+
+        if (message.generatedFiles.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(left: 58, bottom: 18),
+            child: Column(
+              children: message.generatedFiles
+                  .map((file) => GeneratedFileCard(file: file))
+                  .toList(),
+            ),
+          ),
+      ],
     );
   }
 
   Future<void> _handleApprovePayment(ChatMessageModel message) async {
+    if (isApprovingPayment) return;
+
     final requestId = message.requestId;
     final estimatedCost = message.totalEstimatedCost ?? 0;
 
     if (requestId == null) return;
 
     try {
+      setState(() {
+        isApprovingPayment = true;
+      });
+
       final checkResult = await _chatService.checkPayment(
         estimatedCost: estimatedCost,
       );
@@ -170,11 +223,16 @@ class _ChatScreenState extends State<ChatScreen> {
         _statusImagePath = 'assets/images/tiny6.png';
       });
 
-      await _chatService.approveRequest(
+      final result = await _chatService.approveRequest(
         requestId: requestId,
         estimatedCost: estimatedCost,
         walletPassword: walletPassword,
       );
+
+      _paymentResults[message.requestId!] = {
+        'amount': (result['payment']['amount'] as num).toDouble(),
+        'balance': (result['wallet']['balance'] as num).toDouble(),
+      };
 
       await _pollRequestStatus(requestId: requestId);
     } catch (e) {
@@ -190,6 +248,12 @@ class _ChatScreenState extends State<ChatScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.toString())),
       );
+    } finally {
+      if (!mounted) return;
+
+      setState(() {
+        isApprovingPayment = false;
+      });
     }
   }
 
