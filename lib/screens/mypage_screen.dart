@@ -497,43 +497,58 @@ Future<void> _goToChargeScreen() async {
 }
 
   Future<void> _loadMyPageData() async {
+  try {
+    final userData = await _service.getUser();
+    final myPageData = await _service.getMyPage();
+
+    WalletModel? walletApiData;
+
     try {
-      final userData = await _service.getUser();
-      final myPageData = await _service.getMyPage();
-
-      final walletApiData = await WalletApiService().getWallet();
-
-      final prefs = await SharedPreferences.getInstance();
-      final savedAutoPaymentEnabled =
-          prefs.getBool('autoPaymentEnabled') ??
-              walletApiData.autoPaymentEnabled;
-
-      final walletData = walletApiData.copyWith(
-        balance: (myPageData['balance'] as num?)?.toDouble() ??
-            walletApiData.balance,
-        autoPaymentEnabled: savedAutoPaymentEnabled,
-      );
-
-      final budgetData = BudgetModel.fromMyPageJson(myPageData);
-
-      final recentPayments =
-          (myPageData['recentPayments'] as List? ?? [])
-              .map((e) => PaymentModel.fromJson(e))
-              .toList();
-
-      if (!mounted) return;
-
-      setState(() {
-        wallet = walletData;
-        user = userData;
-        budget = budgetData;
-        paymentHistory = recentPayments;
-        autoPaymentEnabled = walletData.autoPaymentEnabled;
-      });
+      walletApiData = await WalletApiService().getWallet();
     } catch (e) {
-      print('LOAD MYPAGE ERROR: $e');
+      print('GET WALLET OPTIONAL ERROR: $e');
     }
+
+    final prefs = await SharedPreferences.getInstance();
+    final savedAutoPaymentEnabled =
+        prefs.getBool('autoPaymentEnabled') ??
+            (walletApiData?.autoPaymentEnabled ?? false);
+
+    final hasWallet =
+        walletApiData != null || myPageData['balance'] != null;
+
+    final walletData = WalletModel(
+      balance: (myPageData['balance'] as num?)?.toDouble() ??
+          walletApiData?.balance ??
+          0,
+      walletAddress: walletApiData?.walletAddress ?? '',
+      isConnected: hasWallet,
+      walletStatus: walletApiData?.walletStatus ??
+          (hasWallet ? 'ACTIVE' : ''),
+      autoPaymentEnabled: savedAutoPaymentEnabled,
+    );
+
+    final budgetData = BudgetModel.fromMyPageJson(myPageData);
+
+    final recentPayments =
+        (myPageData['recentPayments'] as List? ?? [])
+            .map((e) => PaymentModel.fromJson(e))
+            .toList();
+
+    if (!mounted) return;
+
+    setState(() {
+      wallet = walletData;
+      user = userData;
+      budget = budgetData;
+      paymentHistory = recentPayments;
+      autoPaymentEnabled = walletData.autoPaymentEnabled;
+    });
+  } catch (e) {
+    print('LOAD MYPAGE ERROR: $e');
   }
+}
+
 
   @override
   Widget build(BuildContext context) {
