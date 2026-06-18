@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
+import '../../utils/format_utils.dart';
 
 class BudgetCard extends StatelessWidget {
   final double monthlySpent;
@@ -15,15 +16,18 @@ class BudgetCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final double progress = (monthlySpent / monthlyBudget).clamp(0.0, 1.0);
-    final double percent =
-        (monthlySpent / monthlyBudget * 100).clamp(0.0, 100.0);
+    final double progress = monthlyBudget == 0
+        ? 0.0
+        : (monthlySpent / monthlyBudget).clamp(0.0, 1.0);
+    final double percent = monthlyBudget == 0
+        ? 0.0
+        : (monthlySpent / monthlyBudget * 100).clamp(0.0, 100.0);
 
     return GestureDetector(
       onTap: onTap,
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(22),
         decoration: BoxDecoration(
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(30),
@@ -36,166 +40,103 @@ class BudgetCard extends StatelessWidget {
             ),
           ],
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Row(
           children: [
-            Row(
-              children: [
-                const Text(
-                  '이번 달 예산',
-                  style: TextStyle(
-                    color: AppColors.text,
-                    fontSize: 19,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                const Spacer(),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 7,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryLight,
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Text(
-                    '${percent.toStringAsFixed(0)}% 사용 중',
-                    style: const TextStyle(
-                      color: AppColors.primary,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 22),
             Container(
-              padding: const EdgeInsets.all(18),
+              width: 62,
+              height: 62,
               decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFF),
-                borderRadius: BorderRadius.circular(24),
+                color: AppColors.primaryLight,
+                borderRadius: BorderRadius.circular(22),
               ),
-              child: Row(
+              child: const Center(
+                child: Icon(
+                  Icons.trending_up_rounded,
+                  color: AppColors.primary,
+                  size: 30,
+                ),
+              ),
+            ),
+
+            const SizedBox(width: 18),
+
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _CircleProgress(progress: progress),
-                  const SizedBox(width: 18),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          '이번 달 사용량',
-                          style: TextStyle(
+                  Row(
+                    children: [
+                      const Text(
+                        '이번 달 예산',
+                        style: TextStyle(
+                          color: AppColors.text,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      const Spacer(),
+                      const Icon(
+                        Icons.chevron_right_rounded,
+                        color: AppColors.subText,
+                        size: 22,
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        'USDC ${formatUsdc(monthlySpent)}',
+                        style: const TextStyle(
+                          color: AppColors.primary,
+                          fontSize: 26,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -1,
+                        ),
+                      ),
+                      const Spacer(),
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 3),
+                        child: Text(
+                          '/ USDC ${formatUsdc(monthlyBudget)}',
+                          style: const TextStyle(
                             color: AppColors.subText,
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
-                        const SizedBox(height: 8),
-                        FittedBox(
-                          fit: BoxFit.scaleDown,
-                          alignment: Alignment.centerLeft,
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Text(
-                                'USDC ${monthlySpent.toStringAsFixed(1)}',
-                                style: const TextStyle(
-                                  color: AppColors.text,
-                                  fontSize: 25,
-                                  fontWeight: FontWeight.w900,
-                                  letterSpacing: -1,
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                '/ ${monthlyBudget.toStringAsFixed(0)}',
-                                style: const TextStyle(
-                                  color: AppColors.subText,
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: -0.5,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(999),
-                          child: LinearProgressIndicator(
-                            value: progress,
-                            minHeight: 8,
-                            backgroundColor: const Color(0xFFE9EEF8),
-                            valueColor: const AlwaysStoppedAnimation<Color>(
-                              Color(0xFF7B8CFF),
-                            ),
-                          ),
-                        ),
-                      ],
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(999),
+                    child: LinearProgressIndicator(
+                      value: progress,
+                      minHeight: 6,
+                      backgroundColor: const Color(0xFFE9EEF8),
+                      valueColor: const AlwaysStoppedAnimation<Color>(
+                        AppColors.primary,
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 4),
+
+                  Text(
+                    '${percent.toStringAsFixed(0)}% 사용 중',
+                    style: const TextStyle(
+                      color: AppColors.subText,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                 ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _CircleProgress extends StatelessWidget {
-  final double progress;
-
-  const _CircleProgress({
-    required this.progress,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF8EA2FF).withOpacity(0.28),
-            blurRadius: 18,
-            spreadRadius: 2,
-          ),
-        ],
-      ),
-      child: SizedBox(
-        width: 68,
-        height: 68,
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            SizedBox(
-              width: 68,
-              height: 68,
-              child: CircularProgressIndicator(
-                value: progress,
-                strokeWidth: 7.5,
-                backgroundColor: const Color(0xFFE9EEF8),
-                valueColor: const AlwaysStoppedAnimation<Color>(
-                  Color(0xFF7B8CFF),
-                ),
-              ),
-            ),
-            Container(
-              width: 42,
-              height: 42,
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.trending_up_rounded,
-                color: Color(0xFF7B8CFF),
-                size: 22,
               ),
             ),
           ],

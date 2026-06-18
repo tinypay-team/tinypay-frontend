@@ -31,7 +31,7 @@ class LoginScreen extends StatelessWidget {
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        builder: (context) => const MainNavigationScreen(),
+        builder: (context) => const MainNavigationScreen(initialIndex: 1),
       ),
     );
   }
@@ -41,7 +41,8 @@ class LoginScreen extends StatelessWidget {
       
       final GoogleSignIn googleSignIn = GoogleSignIn(
         scopes: ['email', 'profile'],
-        serverClientId: '887536055216-cdd6ra0vvmpn41sadd5uni1v6q42sa2c.apps.googleusercontent.com'
+        clientId: '887536055216-dfsf86vikv59k35hha9nqim10g4hs1i3.apps.googleusercontent.com',
+        serverClientId: '887536055216-cdd6ra0vvmpn41sadd5uni1v6q42sa2c.apps.googleusercontent.com',
       );
 
       final GoogleSignInAccount? user =

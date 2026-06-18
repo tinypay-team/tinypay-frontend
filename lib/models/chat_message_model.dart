@@ -19,12 +19,14 @@ class ApiItemModel {
 }
 
 class GeneratedFileModel {
+  final int? fileId;
   final String fileName;
   final String fileUrl;
   final String fileType;
   final String mimeType;
 
   const GeneratedFileModel({
+    this.fileId,
     required this.fileName,
     required this.fileUrl,
     required this.fileType,
@@ -33,6 +35,7 @@ class GeneratedFileModel {
 
   factory GeneratedFileModel.fromJson(Map<String, dynamic> json) {
     return GeneratedFileModel(
+      fileId: json['fileId'] as int?,
       fileName: json['fileName'] ?? '',
       fileUrl: json['fileUrl'] ?? '',
       fileType: json['fileType'] ?? '',

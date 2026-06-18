@@ -4,6 +4,7 @@ import '../../models/payment_model.dart';
 import '../../theme/app_colors.dart';
 import '../../services/mypage_service.dart';
 import '../../models/payment_detail_model.dart';
+import '../../utils/format_utils.dart';
 
 class PaymentHistoryDialog extends StatelessWidget {
   final List<PaymentModel> paymentHistory;
@@ -200,7 +201,7 @@ class PaymentHistoryDialog extends StatelessWidget {
                 const SizedBox(width: 14),
 
                 Text(
-                  '${totalAmount.toStringAsFixed(3)} USDC',
+                  '${formatUsdc(totalAmount)} USDC',
                   style: const TextStyle(
                     color: AppColors.primary,
                     fontSize: 20,
@@ -512,7 +513,7 @@ class _PaymentApiDetailSheet extends StatelessWidget {
                       const SizedBox(width: 8),
 
                       Text(
-                        '${api.cost.toStringAsFixed(3)} USDC',
+                        '${formatUsdc(api.cost)} USDC',
                         style: const TextStyle(
                           color: AppColors.textPrimary,
                           fontSize: 13,

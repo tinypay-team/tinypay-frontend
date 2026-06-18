@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme/app_colors.dart';
 import '../../widgets/mypage/profile_avatar.dart';
 
 class EditProfileDialog extends StatefulWidget {
@@ -40,6 +41,10 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
   Widget build(BuildContext context) {
     return Dialog(
       backgroundColor: Colors.white,
+      insetPadding: EdgeInsets.fromLTRB(
+        24, 24, 24,
+        MediaQuery.of(context).viewInsets.bottom + 24,
+      ),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(18),
       ),
@@ -55,8 +60,9 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
                   const Text(
                     '프로필 수정',
                     style: TextStyle(
-                      fontSize: 23,
-                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                      fontSize: 22,
+                      fontWeight: FontWeight.w900,
                     ),
                   ),
                   const Spacer(),
@@ -71,15 +77,16 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
               const Text(
                 '프로필 이미지',
                 style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
               const SizedBox(height: 16),
 
               Center(
-                child: AvatarCircle(
-                  avatar: tempAvatar,
+                child: ProfileAvatar(
+                  selectedAvatar: tempAvatar,
                   size: 92,
                 ),
               ),
@@ -114,7 +121,7 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
                       child: Container(
                         decoration: BoxDecoration(
                           color: isSelected
-                              ? const Color(0xFF7B4DFF)
+                              ? AppColors.primary
                               : Colors.white,
                           borderRadius: BorderRadius.circular(10),
                         ),
@@ -135,8 +142,9 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
               const Text(
                 '닉네임',
                 style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
               const SizedBox(height: 10),
@@ -160,8 +168,9 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
               const Text(
                 '2-20자 이내로 입력해주세요',
                 style: TextStyle(
-                  color: Color(0xFF777C8C),
+                  color: AppColors.textSecondary,
                   fontSize: 13,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
 
@@ -178,7 +187,13 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
                           borderRadius: BorderRadius.circular(10),
                         ),
                       ),
-                      child: const Text('취소'),
+                                      child: const Text(
+                        '취소',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -195,12 +210,18 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
                       style: ElevatedButton.styleFrom(
                         fixedSize: const Size.fromHeight(48),
                         foregroundColor: Colors.white,
-                        backgroundColor: const Color(0xFF7B4DFF),
+                        backgroundColor: AppColors.primary,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),
                       ),
-                      child: const Text('저장'),
+                      child: const Text(
+                        '저장',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     ),
                   ),
                 ],

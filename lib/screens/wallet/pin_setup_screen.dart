@@ -28,8 +28,63 @@ class _PinSetupScreenState extends State<PinSetupScreen> {
     }
 
     if (pin != confirmPin) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('PIN이 일치하지 않습니다.')),
+      showDialog(
+        context: context,
+        barrierDismissible: true,
+        builder: (ctx) => Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 40),
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFAF7FF),
+              borderRadius: BorderRadius.circular(28),
+              boxShadow: const [
+                BoxShadow(color: Color(0x22000000), blurRadius: 24, offset: Offset(0, 10)),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFEEEE),
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: const Icon(Icons.lock_outline_rounded, color: Color(0xFFFF5A5A), size: 28),
+                ),
+                const SizedBox(height: 14),
+                const Text(
+                  'PIN 불일치',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF1E2457)),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'PIN이 일치하지 않습니다.\n다시 확인해주세요.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Color(0xFF7B819A), fontSize: 14, height: 1.5),
+                ),
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF5B5CF6),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    ),
+                    child: const Text('확인', style: TextStyle(fontWeight: FontWeight.w900)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       );
       return;
     }
@@ -82,8 +137,11 @@ class _PinSetupScreenState extends State<PinSetupScreen> {
         backgroundColor: const Color(0xFFFAF7FF),
         elevation: 0,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(24),
+      body: SingleChildScrollView(
+        padding: EdgeInsets.fromLTRB(
+          24, 24, 24,
+          MediaQuery.of(context).viewInsets.bottom + 24,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -96,7 +154,7 @@ class _PinSetupScreenState extends State<PinSetupScreen> {
             ),
             const SizedBox(height: 10),
             const Text(
-              '충전이나 중요한 결제 설정을 변경할 때 사용할 4자리 PIN입니다.',
+              '충전이나 중요한 결제 설정을 변경할 때 사용할 6자리 PIN입니다.',
               style: TextStyle(
                 fontSize: 15,
                 color: Colors.black54,
@@ -175,7 +233,7 @@ class _PinSetupScreenState extends State<PinSetupScreen> {
               ),
             ),
 
-            const Spacer(),
+            const SizedBox(height: 40),
 
             SizedBox(
               width: double.infinity,

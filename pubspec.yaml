@@ -42,6 +42,7 @@ dependencies:
   cupertino_icons: ^1.0.8
 
   http: ^1.5.0
+  syncfusion_flutter_pdfviewer: ^27.2.2
 
 dev_dependencies:
   flutter_test:
@@ -76,6 +77,10 @@ flutter:
           weight: 600
         - asset: assets/fonts/Pretendard-Bold.otf
           weight: 700
+        - asset: assets/fonts/Pretendard-ExtraBold.otf
+          weight: 800
+        - asset: assets/fonts/Pretendard-Black.otf
+          weight: 900
 
   # To add assets to your application, add an assets section, like this:
   # assets:

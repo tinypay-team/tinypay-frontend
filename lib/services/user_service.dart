@@ -37,7 +37,7 @@ class UserService {
       return UserModel(
         name: user['nickname'] ?? '',
         email: user['email'] ?? '',
-        avatar: '김',
+        avatar: user['profileImage'] ?? '',
       );
     }
 

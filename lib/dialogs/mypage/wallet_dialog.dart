@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../models/wallet_model.dart';
+import '../../utils/format_utils.dart';
 
 class WalletDialog extends StatelessWidget {
   final WalletModel wallet;
@@ -172,7 +173,7 @@ class WalletDialog extends StatelessWidget {
                           const SizedBox(height: 4),
 
                           Text(
-                            'USDC ${wallet.balance.toStringAsFixed(2)}',
+                            'USDC ${formatUsdc(wallet.balance)}',
                             style: const TextStyle(
                               color: Color(0xFF29358F),
                               fontSize: 18,
@@ -184,7 +185,7 @@ class WalletDialog extends StatelessWidget {
                     ),
 
                     Text(
-                      '${wallet.balance.toStringAsFixed(2)} USDC',
+                      '${formatUsdc(wallet.balance)} USDC',
                       style: const TextStyle(
                         color: Color(0xFF29358F),
                         fontSize: 12,
@@ -214,7 +215,7 @@ class WalletDialog extends StatelessWidget {
                   const Spacer(),
 
                   Text(
-                    'USD ${wallet.balance.toStringAsFixed(2)}',
+                    'USDC ${formatUsdc(wallet.balance)}',
                     style: const TextStyle(
                       color: Color(0xFF5B5CF6),
                       fontSize: 20,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme/app_colors.dart';
 
 class StatCard extends StatelessWidget {
   final String icon;
@@ -15,33 +16,46 @@ class StatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 240,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFE4E1EA)),
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: AppColors.border),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0F000000),
+            blurRadius: 18,
+            offset: Offset(0, 8),
+          ),
+        ],
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(icon, style: const TextStyle(fontSize: 28)),
-          const SizedBox(height: 22),
+          Text(icon, style: const TextStyle(fontSize: 24)),
+          const SizedBox(height: 10),
           Text(
             label,
-            style: const TextStyle(color: Color(0xFF555A6E), fontSize: 16),
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: AppColors.subText,
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+            ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 6),
           FittedBox(
             fit: BoxFit.scaleDown,
+            alignment: Alignment.center,
             child: Text(
               value,
               textAlign: TextAlign.center,
               style: const TextStyle(
-                color: Color(0xFF5B5CF6),
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-                height: 1.15,
+                color: AppColors.primary,
+                fontSize: 26,
+                fontWeight: FontWeight.w900,
+                letterSpacing: -0.5,
               ),
             ),
           ),

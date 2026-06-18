@@ -32,9 +32,12 @@ class WalletApiService {
     final responseBody = _decodeResponse(response);
 
     if (response.statusCode == 200) {
-      return WalletModel.fromJson(
-        responseBody['data'],
-      );
+      final wallet = WalletModel.fromJson(responseBody['data']);
+      // walletId prefs에 저장 (updateAutoPayment 등에서 필요)
+      if (wallet.walletId != null) {
+        await prefs.setInt('walletId', wallet.walletId!);
+      }
+      return wallet;
     }
 
     throw Exception(

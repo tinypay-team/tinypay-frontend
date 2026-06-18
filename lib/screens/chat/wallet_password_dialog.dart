@@ -2,16 +2,22 @@ import 'package:flutter/material.dart';
 
 import '../../theme/app_colors.dart';
 
+/// onSubmit: PIN 입력 후 호출
+/// - null 반환 → 성공 (다이얼로그 닫힘)
+/// - String 반환 → 에러 메시지 (다이얼로그 유지, 에러 표시)
 class WalletPasswordDialog extends StatefulWidget {
-  const WalletPasswordDialog({super.key});
+  final Future<String?> Function(String pin) onSubmit;
+
+  const WalletPasswordDialog({super.key, required this.onSubmit});
 
   @override
-  State<WalletPasswordDialog> createState() =>
-      _WalletPasswordDialogState();
+  State<WalletPasswordDialog> createState() => _WalletPasswordDialogState();
 }
 
 class _WalletPasswordDialogState extends State<WalletPasswordDialog> {
   final TextEditingController _controller = TextEditingController();
+  String? _error;
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -19,17 +25,41 @@ class _WalletPasswordDialogState extends State<WalletPasswordDialog> {
     super.dispose();
   }
 
-  void submit() {
-    final password = _controller.text.trim();
-
-    if (password.length != 6) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('6자리 PIN을 입력해주세요.')),
-      );
+  Future<void> _submit() async {
+    final pin = _controller.text.trim();
+    if (pin.length != 6) {
+      setState(() => _error = '6자리 PIN을 입력해주세요.');
       return;
     }
 
-    Navigator.pop(context, password);
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final error = await widget.onSubmit(pin);
+      if (!mounted) return;
+
+      if (error == null) {
+        // 성공 — 다이얼로그 닫기
+        Navigator.pop(context, pin);
+      } else {
+        // 실패 — 에러 표시, 필드 클리어, 다이얼로그 유지
+        setState(() {
+          _isLoading = false;
+          _error = error;
+          _controller.clear();
+        });
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _error = '오류가 발생했어요. 다시 시도해주세요.';
+        _controller.clear();
+      });
+    }
   }
 
   @override
@@ -57,28 +87,30 @@ class _WalletPasswordDialogState extends State<WalletPasswordDialog> {
               width: 58,
               height: 58,
               decoration: BoxDecoration(
-                color: AppColors.primaryLight,
+                color: _error != null
+                    ? const Color(0xFFFFEEEE)
+                    : AppColors.primaryLight,
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: const Icon(
-                Icons.lock_rounded,
-                color: AppColors.primary,
+              child: Icon(
+                _error != null ? Icons.lock_open_rounded : Icons.lock_rounded,
+                color: _error != null ? AppColors.danger : AppColors.primary,
                 size: 30,
               ),
             ),
 
-            const SizedBox(height: 18),
+            const SizedBox(height: 16),
 
             const Text(
               '지갑 PIN 확인',
               style: TextStyle(
                 color: AppColors.textPrimary,
-                fontSize: 22,
+                fontSize: 20,
                 fontWeight: FontWeight.w900,
               ),
             ),
 
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
 
             const Text(
               '결제를 진행하려면 6자리 지갑 PIN을 입력해주세요.',
@@ -91,7 +123,7 @@ class _WalletPasswordDialogState extends State<WalletPasswordDialog> {
               ),
             ),
 
-            const SizedBox(height: 22),
+            const SizedBox(height: 18),
 
             TextField(
               controller: _controller,
@@ -99,6 +131,7 @@ class _WalletPasswordDialogState extends State<WalletPasswordDialog> {
               obscureText: true,
               maxLength: 6,
               textAlign: TextAlign.center,
+              onSubmitted: (_) => _submit(),
               style: const TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.w900,
@@ -108,32 +141,77 @@ class _WalletPasswordDialogState extends State<WalletPasswordDialog> {
                 hintText: '••••••',
                 counterText: '',
                 filled: true,
-                fillColor: const Color(0xFFF7F5FF),
+                fillColor: _error != null
+                    ? const Color(0xFFFFF5F5)
+                    : const Color(0xFFF7F5FF),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(18),
-                  borderSide: BorderSide(color: AppColors.border),
+                  borderSide: BorderSide(
+                    color: _error != null
+                        ? AppColors.danger
+                        : AppColors.border,
+                  ),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(18),
-                  borderSide: BorderSide(color: AppColors.border),
+                  borderSide: BorderSide(
+                    color: _error != null
+                        ? AppColors.danger.withAlpha(120)
+                        : AppColors.border,
+                  ),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(18),
-                  borderSide: const BorderSide(
-                    color: AppColors.primary,
+                  borderSide: BorderSide(
+                    color: _error != null
+                        ? AppColors.danger
+                        : AppColors.primary,
                     width: 1.5,
                   ),
                 ),
               ),
             ),
 
-            const SizedBox(height: 18),
+            // 에러 메시지 (PIN 틀렸을 때 — 입력 필드 아래)
+            if (_error != null) ...[
+              const SizedBox(height: 10),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFEEEE),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFFFCCCC)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.error_outline_rounded,
+                        color: AppColors.danger, size: 16),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        _error!,
+                        style: const TextStyle(
+                          color: AppColors.danger,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+
+            const SizedBox(height: 16),
 
             Row(
               children: [
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: () => Navigator.pop(context),
+                    onPressed:
+                        _isLoading ? null : () => Navigator.pop(context),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.textSecondary,
                       side: BorderSide(color: AppColors.border),
@@ -148,13 +226,11 @@ class _WalletPasswordDialogState extends State<WalletPasswordDialog> {
                     ),
                   ),
                 ),
-
                 const SizedBox(width: 10),
-
                 Expanded(
                   flex: 2,
                   child: ElevatedButton(
-                    onPressed: submit,
+                    onPressed: _isLoading ? null : _submit,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       foregroundColor: Colors.white,
@@ -163,10 +239,19 @@ class _WalletPasswordDialogState extends State<WalletPasswordDialog> {
                         borderRadius: BorderRadius.circular(16),
                       ),
                     ),
-                    child: const Text(
-                      '확인',
-                      style: TextStyle(fontWeight: FontWeight.w900),
-                    ),
+                    child: _isLoading
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Text(
+                            '확인',
+                            style: TextStyle(fontWeight: FontWeight.w900),
+                          ),
                   ),
                 ),
               ],

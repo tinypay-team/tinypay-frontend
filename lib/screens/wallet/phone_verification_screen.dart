@@ -174,8 +174,11 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
         backgroundColor: const Color(0xFFFAF7FF),
         elevation: 0,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(24),
+      body: SingleChildScrollView(
+        padding: EdgeInsets.fromLTRB(
+          24, 24, 24,
+          MediaQuery.of(context).viewInsets.bottom + 24,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -266,7 +269,7 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
                 ],
               ),
 
-              const Spacer(),
+              const SizedBox(height: 32),
 
               SizedBox(
                 width: double.infinity,

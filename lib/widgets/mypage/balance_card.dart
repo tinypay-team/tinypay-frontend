@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
+import '../../utils/format_utils.dart';
 
 class BalanceCard extends StatelessWidget {
   final bool isWalletConnected;
@@ -66,7 +67,7 @@ class BalanceCard extends StatelessWidget {
                   const SizedBox(height: 8),
 
                   Text(
-                    'USDC ${balance.toStringAsFixed(2)}',
+                    'USDC ${formatUsdc(balance)}',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
@@ -79,18 +80,31 @@ class BalanceCard extends StatelessWidget {
 
                   const SizedBox(height: 10),
 
-                  Text(
-                    isWalletConnected
-                        ? walletAddress
-                        : '지갑이 연결되지 않았습니다.',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Color(0xEEFFFFFF),
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
+                  if (isWalletConnected)
+                    GestureDetector(
+                      onTap: onWalletTap,
+                      child: const Row(
+                        children: [
+                          Icon(Icons.account_balance_wallet_rounded, color: Colors.white, size: 14),
+                          SizedBox(width: 5),
+                          Text(
+                            '내 지갑 보기',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          SizedBox(width: 2),
+                          Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 11),
+                        ],
+                      ),
+                    )
+                  else
+                    const Text(
+                      '지갑이 연결되지 않았습니다.',
+                      style: TextStyle(color: Color(0xEEFFFFFF), fontSize: 13, fontWeight: FontWeight.w600),
                     ),
-                  ),
                 ],
               ),
             ),

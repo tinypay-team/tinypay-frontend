@@ -1,33 +1,30 @@
 import 'package:flutter/material.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../widgets/mypage/stat_card.dart';
-import '../widgets/mypage/payment_item.dart';
 import '../widgets/mypage/balance_card.dart';
 import '../widgets/mypage/budget_card.dart';
 import '../widgets/mypage/limit_card.dart';
 import '../widgets/mypage/profile_avatar.dart';
-import '../widgets/mypage/payment_section_header.dart';
 import '../dialogs/mypage/budget_dialog.dart';
 import '../dialogs/mypage/limit_dialog.dart';
-import '../dialogs/mypage/payment_history_dialog.dart';
-import '../dialogs/mypage/profile_dialog.dart';
-import '../dialogs/mypage/edit_profile_dialog.dart';
-import '../dialogs/mypage/withdraw_dialog.dart';
+import 'mypage/payment_history_page.dart';
+import '../dialogs/mypage/wallet_dialog.dart';
 import '../models/payment_model.dart';
 import '../models/wallet_model.dart';
 import '../models/user_model.dart';
 import '../models/budget_model.dart';
 import '../services/mypage_service.dart';
-import '../dialogs/mypage/wallet_dialog.dart';
+import '../services/wallet_api_service.dart';
 import '../theme/app_colors.dart';
 import 'wallet/phone_verification_screen.dart';
 import 'wallet/charge_screen.dart';
-import '../widgets/mypage/auto_payment_card.dart';
 import '../widgets/mypage/ai_service_usage_item.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'login_screen.dart';
-import '../services/auth_service.dart';
-import '../services/wallet_api_service.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'mypage/profile_page.dart';
+import 'mypage/wallet_page.dart';
+import '../utils/format_utils.dart';
+import '../utils/auto_payment_notifier.dart';
+import '../utils/payment_notifier.dart';
 
 
 class MyPageScreen extends StatefulWidget {
@@ -40,27 +37,22 @@ class MyPageScreen extends StatefulWidget {
 class _MyPageScreenState extends State<MyPageScreen> {
   
   final MyPageService _service = MyPageService();
-  bool autoPaymentEnabled = true;
+  bool autoPaymentEnabled = false;
 
-  void _showWalletDialog() {
-  showDialog(
-    context: context,
-    builder: (context) {
-      return WalletDialog(
-        wallet: wallet!,
-        autoPaymentEnabled: autoPaymentEnabled,
-        onToggleAutoPayment: () {
-          setState(() {
-            autoPaymentEnabled = !autoPaymentEnabled;
-          });
-
-          Navigator.pop(context);
-          _showWalletDialog();
-        },
-      );
-    },
-  );
-}
+  Future<void> _goToWalletPage() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => WalletPage(
+          wallet: wallet!,
+          autoPaymentEnabled: autoPaymentEnabled,
+          onAutoPaymentChanged: (value) {
+            setState(() => autoPaymentEnabled = value);
+          },
+        ),
+      ),
+    );
+  }
 
 Future<void> _goToPhoneVerification() async {
   final result = await Navigator.push(
@@ -118,165 +110,101 @@ Future<void> _goToChargeScreen() async {
     '🐵',
   ];
 
-  void _showProfileDialog() {
-  final parentContext = context;
+  Future<void> _showProfileDialog() async {
+  if (user == null) {
+    try {
+      final userData = await _service.getUser();
+      if (!mounted) return;
+      setState(() => user = userData);
+    } catch (e) {
+      print('LOAD USER ERROR: $e');
+      return;
+    }
+  }
 
-  showDialog(
-    context: parentContext,
-    builder: (dialogContext) {
-      return ProfileDialog(
-        userName: user!.name,
-        userEmail: user!.email,
-        selectedAvatar: user!.avatar,
-        onEditProfileTap: () {
-          Navigator.pop(dialogContext);
-          _showEditProfileDialog();
+  if (!mounted) return;
+
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => ProfilePage(
+        user: user!,
+        onUserUpdated: (updated) {
+          setState(() => user = updated);
         },
-        onWithdrawTap: _showWithdrawDialog,
-        onLogoutTap: () async {
-          Navigator.pop(dialogContext);
-
-          try {
-            final authService = AuthService();
-            await authService.logout();
-          } catch (e) {
-            final prefs = await SharedPreferences.getInstance();
-            await prefs.remove('accessToken');
-            await prefs.remove('refreshToken');
-            await prefs.setBool('isLoggedIn', false);
-          }
-
-          if (!mounted) return;
-
-          Navigator.pushAndRemoveUntil(
-            parentContext,
-            MaterialPageRoute(
-              builder: (_) => const LoginScreen(),
-            ),
-            (route) => false,
-          );
-        },
-      );
-    },
+      ),
+    ),
   );
 }
 
-  void _showEditProfileDialog() {
-  showDialog(
-    context: context,
-    builder: (context) {
-      return EditProfileDialog(
-        userName: user!.name,
-        selectedAvatar: user!.avatar,
-        avatarList: avatarList,
-        onSave: (newName, newAvatar) async {
-          try {
-            await _service.updateUser(
-              nickname: newName,
-            );
 
-            final updatedUser = await _service.getUser();
-
-            if (!mounted) return;
-
-            setState(() {
-              user = updatedUser.copyWith(
-                avatar: newAvatar,
-              );
-            });
-
-            Navigator.pop(context);
-          } catch (e) {
-            print('UPDATE PROFILE ERROR: $e');
-          }
-        },
-      );
-    },
-  );
-}
-
-  void _showWithdrawDialog() {
-  showDialog(
-    context: context,
-    builder: (context) {
-      return WithdrawDialog(
-        onConfirm: () {
-          Navigator.pop(context);
-          Navigator.pop(context);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('...')),
-          );
-        },
-      );
-    },
-  );
-}
-
-  void _showBudgetDialog() {
-  showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
-    builder: (context) {
-      return BudgetDialog(
+  Future<void> _showBudgetDialog() async {
+    final newBudget = await showModalBottomSheet<double>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => BudgetDialog(
         monthlyBudget: budget!.monthlyBudget,
         monthlySpent: budget!.monthlySpent,
-        onSave: (newBudget) async {
-          try {
-            final savedBudget = await _service.updateMonthlyBudget(newBudget);
+      ),
+    );
 
-            if (!mounted) return;
+    print('[DIALOG] pop value: $newBudget');
+    if (newBudget == null || !mounted) return;
 
-            setState(() {
-              budget = budget!.copyWith(monthlyBudget: savedBudget);
-            });
-          } catch (e) {
-            print('UPDATE MONTHLY BUDGET ERROR: $e');
-          }
-        },
+    try {
+      final saved = await _service.updateMonthlyBudget(newBudget);
+      print('[API] budget saved: $saved');
+      if (!mounted) return;
+      print('[setState] before: ${budget?.monthlyBudget}');
+      setState(() {
+        budget = budget!.copyWith(monthlyBudget: saved);
+      });
+      print('[setState] after: ${budget?.monthlyBudget}');
+    } catch (e) {
+      print('[ERROR] $e');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('예산 저장 실패: $e')),
       );
-    },
-  );
-}
+    }
+  }
 
-  void _showLimitDialog() {
-  showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
-    builder: (context) {
-      return LimitDialog(
+  Future<void> _showLimitDialog() async {
+    final newLimit = await showModalBottomSheet<double>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => LimitDialog(
         singleLimit: budget!.singleLimit,
-        onSave: (newLimit) async {
-          try {
-            final savedLimit = await _service.updatePerPaymentLimit(newLimit);
+      ),
+    );
 
-            if (!mounted) return;
+    if (newLimit == null || !mounted) return;
 
-            setState(() {
-              budget = budget!.copyWith(singleLimit: savedLimit);
-            });
-          } catch (e) {
-            print('UPDATE PER PAYMENT LIMIT ERROR: $e');
-          }
-        },
+    try {
+      final saved = await _service.updatePerPaymentLimit(newLimit);
+      print('limit saved: $saved');
+      if (!mounted) return;
+      setState(() {
+        budget = budget!.copyWith(singleLimit: saved);
+      });
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('한도 저장 실패: $e')),
       );
-    },
-  );
-}
+    }
+  }
 
-  void _showPaymentHistoryDialog() {
-  showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
-    builder: (context) {
-      return PaymentHistoryDialog(
-        paymentHistory: paymentHistory,
-      );
-    },
-  );
-}
+  void _showPaymentHistoryPage() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const PaymentHistoryPage(),
+      ),
+    );
+  }
   Future<void> _toggleAutoPayment() async {
     final nextValue = !autoPaymentEnabled;
 
@@ -296,6 +224,7 @@ Future<void> _goToChargeScreen() async {
 
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('autoPaymentEnabled', savedValue);
+      autoPaymentNotifier.value = savedValue;
 
       if (!mounted) return;
 
@@ -486,56 +415,58 @@ Future<void> _goToChargeScreen() async {
   @override
   void initState() {
     super.initState();
+    paymentCompletedNotifier.addListener(_onPaymentCompleted);
     _loadMyPageData();
   }
 
+  void _onPaymentCompleted() {
+    // 결제 완료 시 잔액 포함 마이페이지 데이터 재조회
+    _loadMyPageData();
+  }
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _loadMyPageData();
-}
+  void dispose() {
+    paymentCompletedNotifier.removeListener(_onPaymentCompleted);
+    super.dispose();
+  }
+
 
   Future<void> _loadMyPageData() async {
   try {
-    final userData = await _service.getUser();
-    final myPageData = await _service.getMyPage();
+    final results = await Future.wait([
+      _service.getMyPage(),
+      _service.getUser(),
+    ]);
 
-    WalletModel? walletApiData;
-
-    try {
-      walletApiData = await WalletApiService().getWallet();
-    } catch (e) {
-      print('GET WALLET OPTIONAL ERROR: $e');
-    }
+    final myPageData = results[0] as Map<String, dynamic>;
+    final userData = results[1] as dynamic;
 
     final prefs = await SharedPreferences.getInstance();
     final savedAutoPaymentEnabled =
-        prefs.getBool('autoPaymentEnabled') ??
-            (walletApiData?.autoPaymentEnabled ?? false);
+        prefs.getBool('autoPaymentEnabled') ?? false;
 
-    final hasWallet =
-        walletApiData != null || myPageData['balance'] != null;
+    final hasWallet = myPageData['balance'] != null;
 
     final walletData = WalletModel(
-      balance: (myPageData['balance'] as num?)?.toDouble() ??
-          walletApiData?.balance ??
-          0,
-      walletAddress: walletApiData?.walletAddress ?? '',
+      balance: (myPageData['balance'] as num?)?.toDouble() ?? 0,
+      walletAddress: '',
       isConnected: hasWallet,
-      walletStatus: walletApiData?.walletStatus ??
-          (hasWallet ? 'ACTIVE' : ''),
+      walletStatus: hasWallet ? 'ACTIVE' : '',
       autoPaymentEnabled: savedAutoPaymentEnabled,
     );
 
     final budgetData = BudgetModel.fromMyPageJson(myPageData);
+    print('NEW BUDGET FROM API: ${budgetData.monthlyBudget}, LIMIT: ${budgetData.singleLimit}');
 
     final recentPayments =
         (myPageData['recentPayments'] as List? ?? [])
             .map((e) => PaymentModel.fromJson(e))
             .toList();
 
-    if (!mounted) return;
+    if (!mounted) {
+      print('NOT MOUNTED - setState skipped');
+      return;
+    }
 
     setState(() {
       wallet = walletData;
@@ -544,6 +475,7 @@ Future<void> _goToChargeScreen() async {
       paymentHistory = recentPayments;
       autoPaymentEnabled = walletData.autoPaymentEnabled;
     });
+    print('setState DONE - budget: ${budget?.monthlyBudget}, limit: ${budget?.singleLimit}');
   } catch (e) {
     print('LOAD MYPAGE ERROR: $e');
   }
@@ -553,13 +485,14 @@ Future<void> _goToChargeScreen() async {
   @override
   Widget build(BuildContext context) {
 
-    if (wallet == null || user == null || budget == null) {
+    if (wallet == null || budget == null) {
       return const Scaffold(
         body: Center(
           child: CircularProgressIndicator(),
         ),
       );
     }
+    print('[BUILD] budget.monthlyBudget = ${budget!.monthlyBudget}');
     const primaryColor = Color(0xFF5B5CF6);
 
     return Scaffold(
@@ -582,8 +515,8 @@ Future<void> _goToChargeScreen() async {
             child: Container(
               margin: const EdgeInsets.only(right: 20),
               child: ProfileAvatar(
-                selectedAvatar: user!.avatar,
-                size: 50,
+                selectedAvatar: user?.avatar ?? '🐼',
+                size: 36,
               ),
             ),
           ),
@@ -600,13 +533,8 @@ Future<void> _goToChargeScreen() async {
               balance: wallet!.balance,
               onChargeTap: _goToChargeScreen,
               onWalletTap: wallet!.isConnected
-                ? _showWalletDialog
+                ? _goToWalletPage
                 : _goToPhoneVerification,
-            ),
-            const SizedBox(height: 18),
-            AutoPaymentCard(
-              enabled: autoPaymentEnabled,
-              onToggle: _toggleAutoPayment,
             ),
             const SizedBox(height: 18),
             BudgetCard(
@@ -624,17 +552,27 @@ Future<void> _goToChargeScreen() async {
 Row(
   mainAxisAlignment: MainAxisAlignment.spaceBetween,
   children: [
-    const Text(
-      'AI 서비스 사용 내역',
-      style: TextStyle(
-        color: AppColors.textPrimary,
-        fontSize: 22,
-        fontWeight: FontWeight.w900,
-      ),
+    Row(
+      children: [
+        const Icon(
+          Icons.access_time_rounded,
+          color: AppColors.textPrimary,
+          size: 22,
+        ),
+        const SizedBox(width: 8),
+        const Text(
+          '최근 결제된 서비스',
+          style: TextStyle(
+            color: AppColors.textPrimary,
+            fontSize: 22,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+      ],
     ),
 
     GestureDetector(
-      onTap: _showPaymentHistoryDialog,
+      onTap: _showPaymentHistoryPage,
       child: const Text(
         '전체보기',
         style: TextStyle(
@@ -672,13 +610,22 @@ Container(
         )
       : Column(
           children: paymentHistory.take(4).map((item) {
+            final t = item.title.toLowerCase();
+            final isPdf = t.contains('pdf');
+            final isImg = t.contains('이미지') || t.contains('image') || t.contains('img');
             return AiServiceUsageItem(
-              icon: Icons.auto_awesome_rounded,
-              title: item.title,
-              time: item.time,
-              amount: item.amount,
+              icon: isPdf
+                  ? Icons.picture_as_pdf_rounded
+                  : isImg
+                      ? Icons.image_rounded
+                      : Icons.auto_awesome_rounded,
+              title: item.title.isNotEmpty ? item.title : 'AI 서비스',
+              time: item.rawTime.isNotEmpty
+                  ? formatDateTime(item.rawTime)
+                  : '날짜 없음',
+              amount: '-USDC ${formatUsdc(item.paidAmount)}',
               iconBackground: const Color(0xFFEAF0FF),
-              iconColor: AppColors.primary,
+              iconColor: AppColors.primary, // 색상 통일
             );
           }).toList(),
         ),
@@ -689,44 +636,22 @@ const SizedBox(height: 22),
 Row(
   children: [
     Expanded(
-      child: const StatCard(
+      child: StatCard(
         icon: '📊',
         label: '이번 달 거래',
-        value: '28건',
+        value: '${budget!.transactionCount}건',
       ),
     ),
     const SizedBox(width: 16),
     Expanded(
-      child: const StatCard(
+      child: StatCard(
         icon: '💰',
         label: '평균 거래액',
-        value: 'USDC 0.015',
+        value: 'USDC ${formatUsdc(budget!.averageTransactionAmount)}',
       ),
     ),
   ],
 ),
-            
-           
-            const SizedBox(height: 22),
-            Row(
-              children: [
-                Expanded(
-                  child: const StatCard(
-                    icon: '📊',
-                    label: '이번 달 거래',
-                    value: '28건',
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: const StatCard(
-                    icon: '💰',
-                    label: '평균 거래액',
-                    value: 'USDC 0.015',
-                  ),
-                ),
-              ],
-            ),
           ],
         ),
       ),

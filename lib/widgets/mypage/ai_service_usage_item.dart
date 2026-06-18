@@ -33,11 +33,7 @@ class AiServiceUsageItem extends StatelessWidget {
               color: iconBackground,
               borderRadius: BorderRadius.circular(14),
             ),
-            child: Icon(
-              icon,
-              color: iconColor,
-              size: 24,
-            ),
+            child: Icon(icon, color: iconColor, size: 24),
           ),
 
           const SizedBox(width: 14),
@@ -69,27 +65,13 @@ class AiServiceUsageItem extends StatelessWidget {
             ),
           ),
 
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                amount,
-                style: const TextStyle(
-                  color: AppColors.textPrimary,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              const SizedBox(height: 4),
-              const Text(
-                '완료',
-                style: TextStyle(
-                  color: Color(0xFF24B85A),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ],
+          Text(
+            amount,
+            style: const TextStyle(
+              color: AppColors.primary,
+              fontSize: 14,
+              fontWeight: FontWeight.w900,
+            ),
           ),
         ],
       ),

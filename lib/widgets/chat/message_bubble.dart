@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../models/chat_item_model.dart';
 import '../../theme/app_colors.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class MessageBubble extends StatelessWidget {
   final ChatItemModel item;
@@ -13,136 +13,169 @@ class MessageBubble extends StatelessWidget {
     required this.item,
   });
 
+  // 아바타 (AI 메시지 / 상태 메시지 공통)
+  static Widget buildAvatar() {
+    return Image.asset(
+      'assets/images/tinypay1.png',
+      width: 42,
+      height: 42,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final maxBubbleWidth = MediaQuery.of(context).size.width * 0.78;
+    final maxBubbleWidth = MediaQuery.of(context).size.width * 0.72;
 
+    if (item.isUser) {
+      return _UserBubble(text: item.text, maxWidth: maxBubbleWidth);
+    } else {
+      return _AiBubble(text: item.text, maxWidth: maxBubbleWidth);
+    }
+  }
+}
+
+// ─────────────────────────────────────────────
+// 사용자 말풍선 (오른쪽, 크림색)
+// ─────────────────────────────────────────────
+class _UserBubble extends StatelessWidget {
+  final String text;
+  final double maxWidth;
+
+  const _UserBubble({required this.text, required this.maxWidth});
+
+  @override
+  Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 18),
+      padding: const EdgeInsets.only(bottom: 12),
       child: Row(
-        mainAxisAlignment:
-            item.isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          if (!item.isUser) ...[
-            Padding(
-              padding: const EdgeInsets.only(top: 6),
-              child: Image.asset(
-                'assets/images/tinypay1.png',
-                width: 48,
-                height: 48,
-                fit: BoxFit.contain,
+          ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: maxWidth),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: const BoxDecoration(
+                color: Color(0xFFFFF7DD),
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
+                  bottomLeft: Radius.circular(20),
+                  bottomRight: Radius.circular(5),
+                ),
+              ),
+              child: Text(
+                text,
+                style: const TextStyle(
+                  color: AppColors.textPrimary,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  height: 1.55,
+                ),
               ),
             ),
-            const SizedBox(width: 10),
-          ],
+          ),
+        ],
+      ),
+    );
+  }
+}
 
-          Flexible(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                maxWidth: maxBubbleWidth,
+// ─────────────────────────────────────────────
+// AI 말풍선 (왼쪽, 흰색 + 아바타)
+// ─────────────────────────────────────────────
+class _AiBubble extends StatelessWidget {
+  final String text;
+  final double maxWidth;
+
+  const _AiBubble({required this.text, required this.maxWidth});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          MessageBubble.buildAvatar(),
+          const SizedBox(width: 8),
+          ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: maxWidth),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
+                  bottomLeft: Radius.circular(5),
+                  bottomRight: Radius.circular(20),
+                ),
+                border: Border.all(color: const Color(0xFFEEEEEE)),
               ),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 18,
-                  vertical: 16,
-                ),
-                decoration: BoxDecoration(
-                  color: item.isUser
-                      ? const Color(0xFFFFF7DD)
-                      : Colors.white,
-                  borderRadius: BorderRadius.only(
-                    topLeft: const Radius.circular(26),
-                    topRight: const Radius.circular(26),
-                    bottomLeft: Radius.circular(item.isUser ? 26 : 10),
-                    bottomRight: Radius.circular(item.isUser ? 10 : 26),
+              child: MarkdownBody(
+                data: text,
+                selectable: true,
+                onTapLink: (text, href, title) async {
+                  if (href == null) return;
+                  final uri = Uri.parse(href);
+                  if (await canLaunchUrl(uri)) {
+                    await launchUrl(uri, mode: LaunchMode.externalApplication);
+                  }
+                },
+                styleSheet: MarkdownStyleSheet(
+                  p: const TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    height: 1.55,
                   ),
-                  border: Border.all(
-                    color: item.isUser
-                        ? const Color(0xFFFFF0C7)
-                        : AppColors.border,
+                  strong: const TextStyle(
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.w900,
                   ),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Color(0x0A000000),
-                      blurRadius: 16,
-                      offset: Offset(0, 6),
-                    ),
-                  ],
+                  h1: const TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                    height: 1.4,
+                  ),
+                  h2: const TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    height: 1.4,
+                  ),
+                  h3: const TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    height: 1.4,
+                  ),
+                  listBullet: const TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                  ),
+                  a: const TextStyle(
+                    color: AppColors.primary,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    decoration: TextDecoration.underline,
+                  ),
+                  blockquote: const TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    height: 1.5,
+                  ),
+                  code: const TextStyle(
+                    color: Color(0xFF5B5CF6),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
-                child: item.isUser
-                    ? Text(
-                        item.text,
-                        style: const TextStyle(
-                          color: AppColors.textPrimary,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          height: 1.45,
-                        ),
-                      )
-                    : MarkdownBody(
-                        data: item.text,
-                        selectable: true,
-                        onTapLink: (text, href, title) async {
-                          if (href == null) return;
-
-                          final uri = Uri.parse(href);
-
-                          if (await canLaunchUrl(uri)) {
-                            await launchUrl(
-                              uri,
-                              mode: LaunchMode.externalApplication,
-                            );
-                          }
-                        },
-                        styleSheet: MarkdownStyleSheet(
-                          p: const TextStyle(
-                            color: AppColors.textPrimary,
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
-                            height: 1.55,
-                          ),
-                          strong: const TextStyle(
-                            color: AppColors.textPrimary,
-                            fontWeight: FontWeight.w900,
-                          ),
-                          h1: const TextStyle(
-                            color: AppColors.textPrimary,
-                            fontSize: 22,
-                            fontWeight: FontWeight.w900,
-                            height: 1.35,
-                          ),
-                          h2: const TextStyle(
-                            color: AppColors.textPrimary,
-                            fontSize: 19,
-                            fontWeight: FontWeight.w900,
-                            height: 1.35,
-                          ),
-                          h3: const TextStyle(
-                            color: AppColors.textPrimary,
-                            fontSize: 17,
-                            fontWeight: FontWeight.w900,
-                            height: 1.35,
-                          ),
-                          listBullet: const TextStyle(
-                            color: AppColors.textPrimary,
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
-                          ),
-                          a: const TextStyle(
-                            color: AppColors.primary,
-                            fontSize: 15,
-                            fontWeight: FontWeight.w800,
-                            decoration: TextDecoration.underline,
-                          ),
-                          blockquote: const TextStyle(
-                            color: AppColors.textSecondary,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            height: 1.5,
-                          ),
-                        ),
-                      ),
               ),
             ),
           ),

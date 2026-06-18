@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
+import '../../utils/format_utils.dart';
 
 class LimitCard extends StatelessWidget {
   final double singleLimit;
@@ -60,22 +61,32 @@ class LimitCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    '1회 한도',
-                    style: TextStyle(
-                      color: AppColors.text,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w900,
-                    ),
+                  Row(
+                    children: [
+                      const Text(
+                        '1회 한도',
+                        style: TextStyle(
+                          color: AppColors.text,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      const Spacer(),
+                      const Icon(
+                        Icons.chevron_right_rounded,
+                        color: AppColors.subText,
+                        size: 22,
+                      ),
+                    ],
                   ),
 
                   const SizedBox(height: 8),
 
                   Text(
-                    'USDC ${singleLimit.toStringAsFixed(1)}',
+                    'USDC ${formatUsdc(singleLimit)}',
                     style: const TextStyle(
-                      color: AppColors.text,
-                      fontSize: 29,
+                      color: AppColors.primary,
+                      fontSize: 26,
                       fontWeight: FontWeight.w900,
                       letterSpacing: -1,
                     ),

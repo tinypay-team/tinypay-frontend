@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
 
 import '../../theme/app_colors.dart';
+import '../../utils/format_utils.dart';
 
 class LimitDialog extends StatefulWidget {
   final double singleLimit;
-  final Function(double) onSave;
 
   const LimitDialog({
     super.key,
     required this.singleLimit,
-    required this.onSave,
   });
 
   @override
@@ -23,7 +22,7 @@ class _LimitDialogState extends State<LimitDialog> {
   void initState() {
     super.initState();
     limitController = TextEditingController(
-      text: widget.singleLimit.toStringAsFixed(1),
+      text: formatUsdc(widget.singleLimit),
     );
   }
 
@@ -130,7 +129,11 @@ class _LimitDialogState extends State<LimitDialog> {
 
                 TextField(
                   controller: limitController,
-                  keyboardType: TextInputType.number,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  onTap: () => limitController.selection = TextSelection(
+                    baseOffset: 0,
+                    extentOffset: limitController.text.length,
+                  ),
                   style: const TextStyle(
                     color: AppColors.textPrimary,
                     fontSize: 24,
@@ -174,7 +177,36 @@ class _LimitDialogState extends State<LimitDialog> {
                       SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          '이 금액 이하의 AI 결제는 자동으로 승인돼요.',
+                          '이 금액 이하의 결제는 자동으로 승인돼요.',
+                          style: TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            height: 1.4,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 10),
+
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF5F5),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: const Color(0xFFFFD7D7)),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.lock_outline_rounded, color: AppColors.danger, size: 22),
+                      SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          '이 금액 이상의 결제는 비밀번호가 필요해요.',
                           style: TextStyle(
                             color: AppColors.textSecondary,
                             fontSize: 13,
@@ -198,11 +230,8 @@ class _LimitDialogState extends State<LimitDialog> {
             child: ElevatedButton(
               onPressed: () {
                 final newLimit = double.tryParse(limitController.text);
-
-                if (newLimit == null || newLimit <= 0) return;
-
-                widget.onSave(newLimit);
-                Navigator.pop(context);
+                if (newLimit == null || newLimit < 0) return;
+                Navigator.pop(context, newLimit);
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
@@ -213,7 +242,7 @@ class _LimitDialogState extends State<LimitDialog> {
                 ),
               ),
               child: const Text(
-                '한도 저장하기',
+                '저장',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w900,

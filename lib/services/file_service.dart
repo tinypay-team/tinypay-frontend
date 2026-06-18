@@ -16,7 +16,7 @@ class FileService {
     required String fileName,
     required String fileType,
     required int fileSize,
-    required int sessionId,
+    int? sessionId,
   }) async {
     final prefs = await SharedPreferences.getInstance();
     final accessToken = prefs.getString('accessToken');
@@ -25,11 +25,11 @@ class FileService {
       throw Exception('accessToken이 없습니다.');
     }
 
-    final body = {
+    final body = <String, dynamic>{
       'fileName': fileName,
       'fileType': fileType,
       'fileSize': fileSize,
-      'sessionId': sessionId,
+      if (sessionId != null) 'sessionId': sessionId,
     };
 
     print('GET UPLOAD URL START');
@@ -76,8 +76,8 @@ class FileService {
     print('S3 PUT STATUS: ${response.statusCode}');
     print('S3 PUT BODY: ${response.body}');
 
-    if (response.statusCode != 200) {
-      throw Exception('S3 업로드 실패');
+    if (response.statusCode != 200 && response.statusCode != 204) {
+      throw Exception('S3 업로드 실패 (${response.statusCode})');
     }
   }
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../theme/app_colors.dart';
+import '../../utils/format_utils.dart';
 
 class PaymentCompletedCard extends StatelessWidget {
   final double amount;
@@ -59,7 +60,7 @@ class PaymentCompletedCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 5),
                 Text(
-                  '${amount.toStringAsFixed(3)} USDC 결제 완료',
+                  '${formatUsdc(amount)} USDC 결제 완료',
                   style: const TextStyle(
                     color: AppColors.textSecondary,
                     fontSize: 13,
@@ -69,7 +70,7 @@ class PaymentCompletedCard extends StatelessWidget {
                 if (balance != null) ...[
                   const SizedBox(height: 3),
                   Text(
-                    '잔액 ${balance!.toStringAsFixed(3)} USDC',
+                    '잔액 ${formatUsdc(balance!)} USDC',
                     style: const TextStyle(
                       color: Color(0xFF24B85A),
                       fontSize: 13,

@@ -258,6 +258,31 @@ class ChatService {
     throw Exception(responseBody['message'] ?? '채팅 세션 조회에 실패했습니다.');
   }
 
+  Future<void> deleteSession({required int sessionId}) async {
+    final prefs = await SharedPreferences.getInstance();
+    final accessToken = prefs.getString('accessToken');
+
+    if (accessToken == null || accessToken.isEmpty) {
+      throw Exception('accessToken이 없습니다.');
+    }
+
+    final response = await http.delete(
+      Uri.parse('$baseUrl/api/chat/sessions/$sessionId'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $accessToken',
+      },
+    );
+
+    print('DELETE SESSION STATUS: ${response.statusCode}');
+    print('DELETE SESSION RESPONSE: ${response.body}');
+
+    if (response.statusCode != 200 && response.statusCode != 204) {
+      final responseBody = _decodeResponse(response);
+      throw Exception(responseBody['message'] ?? '세션 삭제에 실패했습니다.');
+    }
+  }
+
   Future<int?> createChatSession() async {
     final prefs = await SharedPreferences.getInstance();
     final accessToken = prefs.getString('accessToken');

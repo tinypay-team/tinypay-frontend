@@ -1,22 +1,22 @@
 import 'package:flutter/material.dart';
 
 import '../../theme/app_colors.dart';
+import '../../utils/format_utils.dart';
 
 class BudgetDialog extends StatefulWidget {
   final double monthlyBudget;
   final double monthlySpent;
-  final Function(double) onSave;
 
   const BudgetDialog({
     super.key,
     required this.monthlyBudget,
     required this.monthlySpent,
-    required this.onSave,
   });
 
   @override
   State<BudgetDialog> createState() => _BudgetDialogState();
 }
+
 
 class _BudgetDialogState extends State<BudgetDialog> {
   late final TextEditingController budgetController;
@@ -25,7 +25,7 @@ class _BudgetDialogState extends State<BudgetDialog> {
   void initState() {
     super.initState();
     budgetController = TextEditingController(
-      text: widget.monthlyBudget.toStringAsFixed(0),
+      text: formatUsdc(widget.monthlyBudget),
     );
   }
 
@@ -37,7 +37,9 @@ class _BudgetDialogState extends State<BudgetDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final progress = widget.monthlySpent / widget.monthlyBudget;
+    final progress = widget.monthlyBudget == 0
+        ? 0.0
+        : (widget.monthlySpent / widget.monthlyBudget).clamp(0.0, 1.0);
 
     return Container(
       padding: EdgeInsets.only(
@@ -134,7 +136,11 @@ class _BudgetDialogState extends State<BudgetDialog> {
 
                 TextField(
                   controller: budgetController,
-                  keyboardType: TextInputType.number,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  onTap: () => budgetController.selection = TextSelection(
+                    baseOffset: 0,
+                    extentOffset: budgetController.text.length,
+                  ),
                   style: const TextStyle(
                     color: AppColors.textPrimary,
                     fontSize: 24,
@@ -156,6 +162,35 @@ class _BudgetDialogState extends State<BudgetDialog> {
                   ),
                 ),
 
+                const SizedBox(height: 14),
+
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF5F5),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: const Color(0xFFFFD7D7)),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.block_rounded, color: AppColors.danger, size: 20),
+                      SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          '설정한 예산을 초과하면 결제가 불가해요.',
+                          style: TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            height: 1.4,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
                 const SizedBox(height: 18),
 
                 Row(
@@ -170,7 +205,7 @@ class _BudgetDialogState extends State<BudgetDialog> {
                       ),
                     ),
                     Text(
-                      '${widget.monthlySpent.toStringAsFixed(2)} / ${widget.monthlyBudget.toStringAsFixed(2)} USDC',
+                      '${formatUsdc(widget.monthlySpent)} / ${formatUsdc(widget.monthlyBudget)} USDC',
                       style: const TextStyle(
                         color: AppColors.textPrimary,
                         fontSize: 13,
@@ -197,7 +232,7 @@ class _BudgetDialogState extends State<BudgetDialog> {
             ),
           ),
 
-          const SizedBox(height: 22),
+          const SizedBox(height: 16),
 
           SizedBox(
             width: double.infinity,
@@ -205,11 +240,8 @@ class _BudgetDialogState extends State<BudgetDialog> {
             child: ElevatedButton(
               onPressed: () {
                 final newBudget = double.tryParse(budgetController.text);
-
-                if (newBudget == null || newBudget <= 0) return;
-
-                widget.onSave(newBudget);
-                Navigator.pop(context);
+                if (newBudget == null || newBudget < 0) return;
+                Navigator.pop(context, newBudget);
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
@@ -220,7 +252,7 @@ class _BudgetDialogState extends State<BudgetDialog> {
                 ),
               ),
               child: const Text(
-                '예산 저장하기',
+                '저장',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w900,

@@ -83,9 +83,17 @@ class MyPageService {
     final responseBody = _decodeResponse(response);
 
     if (response.statusCode == 200) {
-      return UserModel.fromJson(
-        responseBody['data']['user'],
-      );
+      final user = UserModel.fromJson(responseBody['data']['user']);
+      // 서버에 프로필 이미지 URL이 있으면 우선 사용 (구글 프로필 등)
+      if (user.avatar.startsWith('http')) {
+        return user;
+      }
+      // 없으면 로컬 저장된 이모지 사용
+      final localEmoji = prefs.getString('userAvatarEmoji');
+      if (localEmoji != null && localEmoji.isNotEmpty) {
+        return user.copyWith(avatar: localEmoji);
+      }
+      return user;
     }
 
     throw Exception(
@@ -193,6 +201,9 @@ class MyPageService {
       }),
     );
 
+    print('UPDATE BUDGET STATUS: ${response.statusCode}');
+    print('UPDATE BUDGET BODY: ${response.body}');
+
     final responseBody = _decodeResponse(response);
 
     if (response.statusCode == 200) {
@@ -204,7 +215,11 @@ class MyPageService {
     );
   }
 
-  Future<List<PaymentModel>> getPayments() async {
+  /// 결제 내역 커서 기반 페이지네이션 조회
+  /// 반환: (payments, nextCursor) - nextCursor가 null이면 마지막 페이지
+  Future<({List<PaymentModel> payments, int? nextCursor})> getPayments({
+    int? cursor,
+  }) async {
     final prefs = await SharedPreferences.getInstance();
     final accessToken = prefs.getString('accessToken');
 
@@ -212,8 +227,12 @@ class MyPageService {
       throw Exception('accessToken이 없습니다.');
     }
 
+    final uri = cursor != null
+        ? Uri.parse('$baseUrl/api/payments?cursor=$cursor')
+        : Uri.parse('$baseUrl/api/payments');
+
     final response = await http.get(
-      Uri.parse('$baseUrl/api/payments'),
+      uri,
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $accessToken',
@@ -226,11 +245,12 @@ class MyPageService {
     final responseBody = _decodeResponse(response);
 
     if (response.statusCode == 200) {
-      final payments = responseBody['data']['payments'] as List;
-
-      return payments
-          .map((e) => PaymentModel.fromJson(e))
+      final data = responseBody['data'] as Map<String, dynamic>;
+      final payments = (data['payments'] as List? ?? [])
+          .map((e) => PaymentModel.fromJson(e as Map<String, dynamic>))
           .toList();
+      final nextCursor = data['nextCursor'] as int?;
+      return (payments: payments, nextCursor: nextCursor);
     }
 
     throw Exception(
@@ -239,12 +259,18 @@ class MyPageService {
   }
 
   Future<void> updateUser({
-    required String nickname,
+    String? nickname,
+    String? profileImage,
   }) async {
     print('UPDATE USER START');
 
     final prefs = await SharedPreferences.getInstance();
     final accessToken = prefs.getString('accessToken');
+
+    final body = <String, dynamic>{
+      if (nickname != null) 'nickname': nickname,
+      if (profileImage != null) 'profileImage': profileImage,
+    };
 
     final response = await http.patch(
       Uri.parse('$baseUrl/api/users/me'),
@@ -252,13 +278,16 @@ class MyPageService {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $accessToken',
       },
-      body: jsonEncode({
-        'nickname': nickname,
-      }),
+      body: jsonEncode(body),
     );
 
     print('UPDATE USER STATUS: ${response.statusCode}');
     print('UPDATE USER BODY: ${response.body}');
+
+    if (response.statusCode != 200 && response.statusCode != 201 && response.statusCode != 204) {
+      final body = _decodeResponse(response);
+      throw Exception(body['message'] ?? '프로필 저장 실패 (${response.statusCode})');
+    }
   }
 
   Map<String, dynamic> _decodeResponse(http.Response response) {

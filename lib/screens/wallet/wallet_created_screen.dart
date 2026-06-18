@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../services/wallet_state.dart';
+import '../main_navigation_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class WalletCreatedScreen extends StatelessWidget {
@@ -31,7 +32,14 @@ class WalletCreatedScreen extends StatelessWidget {
       await WalletState.connectWallet(walletId: walletId);
     }
 
-    Navigator.pop(context, true);
+    if (!context.mounted) return;
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const MainNavigationScreen(initialIndex: 1),
+      ),
+      (route) => false,
+    );
   }
 
   @override
@@ -43,9 +51,16 @@ class WalletCreatedScreen extends StatelessWidget {
         backgroundColor: const Color(0xFFFAF7FF),
         elevation: 0,
       ),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
-        child: Column(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            minHeight: MediaQuery.of(context).size.height -
+                AppBar().preferredSize.height -
+                MediaQuery.of(context).padding.top,
+          ),
+          child: IntrinsicHeight(
+            child: Column(
           children: [
             const Spacer(),
 
@@ -146,6 +161,8 @@ class WalletCreatedScreen extends StatelessWidget {
               ),
             ),
           ],
+            ),
+          ),
         ),
       ),
     );
